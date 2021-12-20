@@ -1,0 +1,7 @@
+[package]
+name = "virus-simulator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ode_solvers = "0.3.4"
