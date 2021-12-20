@@ -40,12 +40,23 @@ impl<'a> Simulator<'a> {
             infection_rate,
         }
     }
+
 }
 
 impl<'a> ode_solvers::System<State<'a>> for Simulator<'a> {
-    // TODO: Implement system of ODEs
     fn system(&self, _t: Time, y: &State, dy: &mut State) {
-        todo!()
+        let self.susceptible = y[0];
+        let self.exposed = y[1];
+        let self.infectious = y[2];
+        let self.removed = y[3];
+        let self.current_reproduction_number = y[4];
+
+        dy[0] = -self.recovery_rate * current_reproduction_number * susceptible * infectious;
+        dy[1] = self.recovery_rate * current_reproduction_number * susceptible * infectious
+            - self.infection_rate * exposed;
+        dy[2] = self.infection_rate * self.exposed - self.recovery_rate * infectious;
+        dy[3] = self.recovery_rate * self.infectious;
+        dy[4] = self.social_parameter * (self.ideal_reproduction_number - self.reproduction_number);
     }
 }
 
