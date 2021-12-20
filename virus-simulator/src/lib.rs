@@ -2,7 +2,7 @@
 use ode_solvers::dopri5::*;
 use ode_solvers::*;
 
-type State = Vector5<f64>;
+pub type State = Vector5<f64>;
 type Time = f64;
 
 /// Simulator based on SEIR Model
@@ -41,6 +41,29 @@ impl<'a> Simulator<'a> {
             recovery_rate,
             infection_rate,
         }
+    }
+
+    pub fn simulate(self, start_time: Time, end_time: Time) -> Vec<State> {
+        let current_state = State::new(
+            *self.susceptible,
+            *self.exposed,
+            *self.infectious,
+            *self.removed,
+            *self.current_reproduction_number,
+        );
+
+        let mut stepper = Dopri5::new(
+            self,
+            start_time,
+            end_time,
+            1.0,
+            current_state,
+            1.0e-10,
+            1.0e-10,
+        );
+
+        let _ = stepper.integrate().expect("Integration Error :(");
+        stepper.y_out().to_vec()
     }
 }
 
