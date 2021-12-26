@@ -1,22 +1,24 @@
 // extern crate time;
+use actix_cors::Cors;
 use actix_web::{
     get,
-    http::{Cookie, StatusCode},
-    post, web, Error, HttpResponse,
+    http::Cookie,
+    post, web, Error, HttpResponse
 };
 use diesel::prelude::*;
-use diesel::r2d2::{self, ConnectionManager};
 // use chrono::Duration;
+use actix_web::http;
 use time::Duration;
+
+use crate::models;
+use crate::auth::response;
+
 // use time::duration::Duration;
 
 use crate::actions;
-use crate::models;
-
-type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 #[get("/user")]
-async fn get_user(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+async fn get_user(pool: web::Data<models::DbPool>) -> Result<HttpResponse, Error> {
     let user = web::block(move || {
         let conn = pool.get()?;
         actions::find_user_by_uid(&conn)
@@ -34,9 +36,14 @@ async fn get_user(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
     }
 }
 
+#[get("/dummy")]
+async fn dummy() -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::Ok().finish())
+}
+
 #[post("/user/register")]
 async fn register_user(
-    pool: web::Data<DbPool>,
+    pool: web::Data<models::DbPool>,
     form: web::Json<models::NewUser>,
 ) -> Result<HttpResponse, Error> {
     println!("here");
@@ -47,12 +54,12 @@ async fn register_user(
     .await
     .map_err(|e| {
         eprintln!("{}", e);
-        HttpResponse::InternalServerError().json(models::AuthResult {
+        HttpResponse::InternalServerError().json(response::AuthResult {
             is_verified: false,
             status: String::from("Couldn't create"),
         })
     })?;
-    Ok(HttpResponse::Ok().json(models::AuthResult {
+    Ok(HttpResponse::Ok().json(response::AuthResult {
         is_verified: true,
         status: String::from("Created successfully"),
     }))
@@ -60,7 +67,7 @@ async fn register_user(
 
 #[post("/user/login")]
 async fn login_user(
-    pool: web::Data<DbPool>,
+    pool: web::Data<models::DbPool>,
     form: web::Json<models::NewUser>,
 ) -> Result<HttpResponse, Error> {
     let (is_verified, token, status) = web::block(move || {
@@ -78,10 +85,34 @@ async fn login_user(
     auth_cookie.set_path("/");
     auth_cookie.set_http_only(true);
     // auth_cookie.set_max_age(Some(Duration::hours(expiry_date)));
-    let mut resp = HttpResponse::Ok().json(models::AuthResult {
+    let mut resp = HttpResponse::Ok().json(response::AuthResult {
         is_verified: true,
         status: String::from("Successfully done"),
     });
     resp.add_cookie(&auth_cookie)?;
     Ok(resp)
+}
+
+pub fn auth_routes(cfg: &mut web::ServiceConfig) {
+    let cors_config: Cors = Cors::default()
+        .allowed_origin("http://localhost:8080")
+        .allowed_methods(vec!["POST"])
+        .allowed_headers(vec![
+            http::header::CONTENT_TYPE,
+            http::header::ACCESS_CONTROL_ALLOW_HEADERS,
+            http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+            http::header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
+        ])
+        // .expose_headers(vec![
+        //     http::header::SET_COOKIE,
+        //     http::header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
+        // ])
+        .supports_credentials();
+    cfg.service(
+        web::scope("/auth")
+            .service(get_user)
+            .wrap(cors_config)
+            .service(register_user)
+            .service(login_user),
+    );
 }
