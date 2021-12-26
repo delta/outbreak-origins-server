@@ -7,10 +7,10 @@ use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
 
 mod actions;
+mod auth;
 mod models;
 mod schema;
 mod utils;
-mod auth;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

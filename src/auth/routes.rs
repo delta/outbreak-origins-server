@@ -1,17 +1,13 @@
 // extern crate time;
 use actix_cors::Cors;
-use actix_web::{
-    get,
-    http::Cookie,
-    post, web, Error, HttpResponse
-};
+use actix_web::{get, http::Cookie, post, web, Error, HttpResponse};
 use diesel::prelude::*;
 // use chrono::Duration;
 use actix_web::http;
 use time::Duration;
 
-use crate::models;
 use crate::auth::response;
+use crate::models;
 
 // use time::duration::Duration;
 
