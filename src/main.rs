@@ -1,3 +1,4 @@
+use db::*;
 use virus_simulator::Simulator;
 
 use actix::prelude::*;
@@ -26,6 +27,7 @@ const initial_social_parameter: f64 = 0.5;
 
 struct Game {
     heartbeat: Instant,
+    pool: web::Data<PgPool>,
 }
 
 impl Actor for Game {
@@ -50,8 +52,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
             }
             Ok(Message::Text(text)) => {
                 println!("{}", text);
-                let json: String = serde_json::from_str(&text).expect("Error :(");
-                println!("{}", json);
+                let event = String::from("event1");
+                let pool = &(self.pool);
+                let pg_pool = pg_pool_handler(pool);
+                if (text == event) {
+                    let event_details =
+                        find_event_by_id(&pg_pool.expect("Can't fetch event details"), 1)
+                            .unwrap()
+                            .unwrap();
+                    println!("{}", event_details.name);
+                }
             }
             _ => ctx.stop(),
         }
@@ -89,9 +99,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
 }
 
 impl Game {
-    fn new() -> Self {
+    fn new(conn_pool: web::Data<PgPool>) -> Self {
         Self {
             heartbeat: Instant::now(),
+            pool: conn_pool,
         }
     }
 
@@ -114,17 +125,30 @@ impl Game {
     }
 }
 
-async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
+fn pg_pool_handler(pool: &(web::Data<PgPool>)) -> Result<PgPooledConnection, HttpResponse> {
+    (*pool)
+        .get()
+        .map_err(|e| HttpResponse::InternalServerError().json(e.to_string()))
+}
+
+async fn ws_index(
+    r: HttpRequest,
+    stream: web::Payload,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, Error> {
     println! {"{:?}",r};
-    let res = ws::start(Game::new(), &r, stream);
+    let res = ws::start(Game::new(pool), &r, stream);
     println!("{:?}", res);
     res
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
+    let pool = create_db_pool();
+
+    HttpServer::new(move || {
         App::new()
+            .data(pool.clone())
             .wrap(middleware::Logger::default())
             .service(web::resource("/ws/").route(web::get().to(ws_index)))
             .service(fs::Files::new("/", "static/").index_file("index.html"))
