@@ -1,25 +1,8 @@
 use diesel::prelude::*;
 
 use crate::models;
-use crate::utils::create_jwt;
+use crate::utils::{functions::create_jwt, types::DbError};
 use bcrypt::{hash, verify, DEFAULT_COST};
-// use std::{fs::File, io::Read};
-use serde::Deserialize;
-use std::env;
-use std::error::Error;
-// use oauth2::reqwest::http_client;
-// use oauth2::{
-//     AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, RedirectUrl,
-//     RevocationUrl, Scope, TokenUrl,
-// };
-
-type DbError = Box<dyn std::error::Error + Send + Sync>;
-
-// #[derive(Deserialize, Debug)]
-// struct GoogleCreds {
-//     client_id: String,
-//     client_secret: String,
-// }
 
 pub fn find_user_by_uid(conn: &PgConnection) -> Result<Option<models::User>, DbError> {
     use crate::schema::users::dsl::*;
@@ -32,13 +15,14 @@ pub fn find_user_by_uid(conn: &PgConnection) -> Result<Option<models::User>, DbE
 pub fn insert_new_user(
     fusername: &str,
     fpassword: &str,
+    femail: &str,
     conn: &PgConnection,
 ) -> Result<(), DbError> {
     use crate::schema::users::dsl::*;
-    println!("In here");
     let new_user = models::NewUser {
         username: fusername.to_owned(),
         password: hash(fpassword.to_owned(), DEFAULT_COST)?,
+        email: femail.to_owned()
     };
 
     diesel::insert_into(users).values(&new_user).execute(conn)?;
