@@ -1,0 +1,15 @@
+name: Check Commit Message
+
+on: [pull_request, push]
+
+jobs:
+  check-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v2
+
+      - name: Check commit 🧪
+        uses: adityaa30/check-commit@master
+        with:
+          max-header-length: 100
