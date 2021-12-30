@@ -1,23 +1,20 @@
-// extern crate time;
 use actix_cors::Cors;
 use actix_web::{get, http::Cookie, post, web, Error, HttpResponse};
-use diesel::prelude::*;
 // use chrono::Duration;
 use actix_web::http;
 use time::Duration;
 
 use crate::auth::response;
 use crate::models;
+use crate::auth::controllers;
 
 // use time::duration::Duration;
-
-use crate::actions;
 
 #[get("/user")]
 async fn get_user(pool: web::Data<models::DbPool>) -> Result<HttpResponse, Error> {
     let user = web::block(move || {
         let conn = pool.get()?;
-        actions::find_user_by_uid(&conn)
+        controllers::find_user_by_uid(&conn)
     })
     .await
     .map_err(|e| {
@@ -45,7 +42,7 @@ async fn register_user(
     println!("here");
     web::block(move || {
         let conn = pool.get()?;
-        actions::insert_new_user(&form.username, &form.password, &conn)
+        controllers::insert_new_user( &form.username, &form.password, &form.email,&conn)
     })
     .await
     .map_err(|e| {
@@ -68,7 +65,7 @@ async fn login_user(
 ) -> Result<HttpResponse, Error> {
     let (is_verified, token, status) = web::block(move || {
         let conn = pool.get()?;
-        actions::verify_user_by_username(&form.username, &form.password, &conn)
+        controllers::verify_user_by_username(&form.username, &form.password, &conn)
     })
     .await
     .map_err(|e| {

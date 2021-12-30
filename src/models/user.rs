@@ -8,6 +8,7 @@ pub struct User {
     pub username: String,
     pub password: Option<String>,
     pub curlevel: i32,
+    pub email: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
@@ -15,4 +16,5 @@ pub struct User {
 pub struct NewUser {
     pub username: String,
     pub password: String,
+    pub email: String,
 }

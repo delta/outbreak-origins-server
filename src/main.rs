@@ -6,7 +6,6 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
 
-mod actions;
 mod auth;
 mod models;
 mod schema;
