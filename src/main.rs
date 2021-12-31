@@ -1,4 +1,11 @@
-use db::*;
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
+
+pub mod db;
+
+use crate::db::*;
+
 use virus_simulator::Simulator;
 
 use actix::prelude::*;
