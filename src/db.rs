@@ -10,7 +10,6 @@ use r2d2::{Pool, PooledConnection};
 use r2d2_diesel::ConnectionManager;
 use std::env;
 
-
 pub type PgPool = Pool<ConnectionManager<PgConnection>>;
 pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
@@ -24,9 +23,9 @@ pub fn create_db_pool() -> PgPool {
         .expect("Failed to create pool")
 }
 
-// pub fn find_event_by_id(conn: &PgConnection, id: i32) -> Result<Option<models::Event>, DbError> {
-//     use crate::db::schema::events::dsl::*;
+pub fn find_event_by_id(conn: &PgConnection, id: i32) -> Result<Option<models::Event>, DbError> {
+    use crate::db::schema::events::dsl::*;
 
-//     let event_res = events.find(id).first(conn).optional()?;
-//     Ok(event_res)
-// }
+    let event_res = events.find(id).first(conn).optional()?;
+    Ok(event_res)
+}

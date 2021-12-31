@@ -2,4 +2,8 @@
 # see diesel.rs/guides/configuring-diesel-cli
 
 [print_schema]
+<<<<<<< HEAD
 file = "src/db/schema.rs"
+=======
+file = "src/schema.rs"
+>>>>>>> 6956b04 (fix(simulator): refactors code and integrates the new changes)
