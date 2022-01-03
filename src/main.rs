@@ -13,7 +13,10 @@ mod utils;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok();
+    let res = dotenv();
+    if res.is_err() {
+        std::process::exit(1)
+    }
 
     let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
     let manager = ConnectionManager::<PgConnection>::new(connspec);
@@ -25,7 +28,6 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // set up DB pool to be used with web::Data<Pool> extractor
             .data(pool.clone())
-            // .wrap(middleware::Logger::default())
             .configure(auth::routes::auth_routes)
     })
     .bind(&bind)?

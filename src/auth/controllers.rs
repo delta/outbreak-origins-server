@@ -4,14 +4,6 @@ use crate::models;
 use crate::utils::{functions::create_jwt, types::DbError};
 use bcrypt::{hash, verify, DEFAULT_COST};
 
-pub fn find_user_by_uid(conn: &PgConnection) -> Result<Option<models::User>, DbError> {
-    use crate::schema::users::dsl::*;
-
-    let user_res = users.first::<models::User>(conn).optional()?;
-
-    Ok(user_res)
-}
-
 pub fn insert_new_user(
     fusername: &str,
     fpassword: &str,
@@ -22,7 +14,7 @@ pub fn insert_new_user(
     let new_user = models::NewUser {
         username: fusername.to_owned(),
         password: hash(fpassword.to_owned(), DEFAULT_COST)?,
-        email: femail.to_owned()
+        email: femail.to_owned(),
     };
 
     diesel::insert_into(users).values(&new_user).execute(conn)?;
