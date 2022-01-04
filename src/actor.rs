@@ -14,16 +14,16 @@ const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
-const initial_infected: f64 = 0.0000001;
-const initial_exposed: f64 = 4.0 * initial_infected;
-const initial_susceptible: f64 = 1.0 - initial_infected - initial_exposed;
-const initial_removed: f64 = 0.0;
-const initial_reproduction_number: f64 = 1.6;
+const INITIAL_INFECTED: f64 = 0.0000001;
+const INITIAL_EXPOSED: f64 = 4.0 * INITIAL_INFECTED;
+const INITIAL_SUSCEPTIBLE: f64 = 1.0 - INITIAL_INFECTED - INITIAL_EXPOSED;
+const INITIAL_REMOVED: f64 = 0.0;
+const INITIAL_REPRODUCTION_NUMBER: f64 = 1.6;
 
-const initial_ideal_reproduction_number: f64 = 2.0;
-const initial_recovery_rate: f64 = 0.0555;
-const initial_infection_rate: f64 = 0.1923076923;
-const initial_social_parameter: f64 = 0.5;
+const INITIAL_IDEAL_REPRODUCTION_NUMBER: f64 = 2.0;
+const INITIAL_RECOVERY_RATE: f64 = 0.0555;
+const INITIAL_INFECTION_RATE: f64 = 0.1923076923;
+const INITIAL_SOCIAL_PARAMETER: f64 = 0.5;
 
 struct Game {
     heartbeat: Instant,
@@ -57,7 +57,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                 let pg_pool = pg_pool_handler(pool);
                 if text == event {
                     let event_details =
-                        find_event_by_id(&pg_pool.expect("Can't fetch event details"), 1)
+                        events::find_event_by_id(&pg_pool.expect("Can't fetch event details"), 1)
                             .unwrap()
                             .unwrap();
                     println!("{}", event_details.name);
@@ -68,16 +68,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
     }
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        let susceptible = initial_susceptible;
-        let exposed = initial_exposed;
-        let infected = initial_infected;
-        let removed = initial_removed;
-        let reproduction_number = initial_reproduction_number;
+        let susceptible = INITIAL_SUSCEPTIBLE;
+        let exposed = INITIAL_EXPOSED;
+        let infected = INITIAL_INFECTED;
+        let removed = INITIAL_REMOVED;
+        let reproduction_number = INITIAL_REPRODUCTION_NUMBER;
 
-        let ideal_reproduction_number = initial_ideal_reproduction_number;
-        let infection_rate = initial_infection_rate;
-        let recovery_rate = initial_recovery_rate;
-        let social_parameter = initial_social_parameter;
+        let ideal_reproduction_number = INITIAL_IDEAL_REPRODUCTION_NUMBER;
+        let infection_rate = INITIAL_INFECTION_RATE;
+        let recovery_rate = INITIAL_RECOVERY_RATE;
+        let social_parameter = INITIAL_SOCIAL_PARAMETER;
 
         let simulator = Simulator::new(
             &susceptible,

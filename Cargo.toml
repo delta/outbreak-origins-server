@@ -10,7 +10,7 @@ virus_simulator = { path = "virus-simulator"}
 
 diesel = { version = "1.4.4", features = ["postgres"] }
 dotenv = "0.15.0"
-r2d2 = "*"
+r2d2 = "0.8.9"
 r2d2-diesel = "*"
 
 actix = "0.10"
