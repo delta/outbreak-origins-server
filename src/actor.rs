@@ -4,7 +4,7 @@ use virus_simulator::Simulator;
 
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
-use actix_web::{web,Error, HttpRequest, HttpResponse};
+use actix_web::{web, HttpResponse};
 use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
 
@@ -25,7 +25,7 @@ const INITIAL_RECOVERY_RATE: f64 = 0.0555;
 const INITIAL_INFECTION_RATE: f64 = 0.1923076923;
 const INITIAL_SOCIAL_PARAMETER: f64 = 0.5;
 
-struct Game {
+pub struct Game {
     heartbeat: Instant,
     pool: web::Data<PgPool>,
 }
@@ -131,13 +131,3 @@ pub fn pg_pool_handler(pool: &(web::Data<PgPool>)) -> Result<PgPooledConnection,
         .map_err(|e| HttpResponse::InternalServerError().json(e.to_string()))
 }
 
-pub async fn ws_index(
-    r: HttpRequest,
-    stream: web::Payload,
-    pool: web::Data<PgPool>,
-) -> Result<HttpResponse, Error> {
-    println! {"{:?}",r};
-    let res = ws::start(Game::new(pool), &r, stream);
-    println!("{:?}", res);
-    res
-}

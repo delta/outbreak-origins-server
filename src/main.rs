@@ -7,7 +7,21 @@ pub mod db;
 use crate::actor::*;
 use crate::db::*;
 use actix_files as fs;
-use actix_web::{middleware,App, web, HttpServer};
+
+use actix_web::{web,Error, HttpRequest, HttpResponse};
+use actix_web_actors::ws;
+use actix_web::{middleware,App, HttpServer};
+
+pub async fn ws_index(
+    r: HttpRequest,
+    stream: web::Payload,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, Error> {
+    println! {"{:?}",r};
+    let res = ws::start(Game::new(pool), &r, stream);
+    println!("{:?}", res);
+    res
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
