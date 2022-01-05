@@ -1,3 +1,4 @@
 mod controllers;
-pub mod response;
+pub mod middleware;
+mod response;
 pub mod routes;
