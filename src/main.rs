@@ -1,15 +1,18 @@
 #[macro_use]
 extern crate diesel;
 
+use actix_identity::IdentityService;
 use actix_web::{App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
 
 mod auth;
+mod middleware;
 mod models;
 mod schema;
 mod utils;
+use crate::middleware as common_middleware;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -28,6 +31,9 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // set up DB pool to be used with web::Data<Pool> extractor
             .data(pool.clone())
+            .wrap(auth::middleware::CheckAuth {})
+            .wrap(IdentityService::new(auth::middleware::cookie_policy()))
+            .wrap(common_middleware::cors_config())
             .configure(auth::routes::auth_routes)
     })
     .bind(&bind)?

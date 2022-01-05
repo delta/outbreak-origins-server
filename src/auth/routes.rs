@@ -1,11 +1,7 @@
-use actix_cors::Cors;
-use actix_identity::Identity;
-use actix_identity::{CookieIdentityPolicy, IdentityService};
-use actix_web::http;
-use actix_web::{get, post, web, Error, HttpResponse};
-
 use crate::auth::{controllers, response};
 use crate::models;
+use actix_identity::Identity;
+use actix_web::{get, post, web, Error, HttpResponse};
 
 #[post("/user/register")]
 async fn register_user(
@@ -53,7 +49,7 @@ async fn login_user(
         eprintln!("{}", e);
         HttpResponse::InternalServerError().finish()
     })?;
-    println!("{}", token);
+    println!("Token: {}", token);
     if is_verified {
         id.remember(token)
     }
@@ -65,33 +61,10 @@ async fn login_user(
 }
 
 pub fn auth_routes(cfg: &mut web::ServiceConfig) {
-    let cors_config: Cors = Cors::default()
-        .allowed_origin("http://localhost:8001")
-        .allowed_methods(vec!["POST"])
-        .allowed_headers(vec![
-            http::header::CONTENT_TYPE,
-            http::header::ACCESS_CONTROL_ALLOW_HEADERS,
-            http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
-            http::header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
-        ])
-        .supports_credentials();
-    let expiry = std::env::var("EXPIRY")
-        .expect("EXPIRY")
-        .parse::<i64>()
-        .expect("Needed a number for expiry");
-    let cookie_key = std::env::var("COOKIE_KEY").expect("COOKIE_KEY");
     cfg.service(
         web::scope("/auth")
-            .wrap(cors_config)
             .service(register_user)
-            .wrap(IdentityService::new(
-                CookieIdentityPolicy::new(cookie_key.as_ref()) // <- construct cookie policy
-                    .domain("localhost")
-                    .name("OutBreakAuth")
-                    .path("/")
-                    .max_age(expiry),
-            ))
-            .service(login_user)
-            .service(logout_user),
+            .service(logout_user)
+            .service(login_user),
     );
 }
