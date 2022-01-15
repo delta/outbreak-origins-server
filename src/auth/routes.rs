@@ -11,7 +11,13 @@ async fn register_user(
     println!("here");
     web::block(move || {
         let conn = pool.get()?;
-        controllers::insert_new_user(&form.firstname, &form.lastname, &form.password, &form.email, &conn)
+        controllers::insert_new_user(
+            &form.firstname,
+            &form.lastname,
+            &form.password,
+            &form.email,
+            &conn,
+        )
     })
     .await
     .map_err(|e| {
