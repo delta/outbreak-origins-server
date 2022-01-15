@@ -5,14 +5,16 @@ use crate::utils::{functions::create_jwt, types::DbError};
 use bcrypt::{hash, verify, DEFAULT_COST};
 
 pub fn insert_new_user(
-    fusername: &str,
+    ffirstname: &str,
+    flastname: &str,
     fpassword: &str,
     femail: &str,
     conn: &PgConnection,
 ) -> Result<(), DbError> {
     use crate::schema::users::dsl::*;
     let new_user = models::NewUser {
-        username: fusername.to_owned(),
+        firstname: ffirstname.to_owned(),
+        lastname: flastname.to_owned(),
         password: hash(fpassword.to_owned(), DEFAULT_COST)?,
         email: femail.to_owned(),
     };
@@ -21,14 +23,14 @@ pub fn insert_new_user(
     Ok(())
 }
 
-pub fn verify_user_by_username(
-    fusername: &str,
+pub fn verify_user_by_email(
+    femail: &str,
     fpassword: &str,
     conn: &PgConnection,
 ) -> Result<(bool, String, String), DbError> {
     use crate::schema::users::dsl::*;
     let user = users
-        .filter(username.eq(fusername))
+        .filter(email.eq(femail))
         .first::<models::User>(conn)
         .optional()?;
     let is_verified = match user {
@@ -37,7 +39,7 @@ pub fn verify_user_by_username(
                 if verify(fpassword.to_owned(), &p)? {
                     (
                         true,
-                        create_jwt(u.id, u.username)?,
+                        create_jwt(u.id, u.email)?,
                         String::from("Successfully authenticated"),
                     )
                 } else {

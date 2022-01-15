@@ -59,18 +59,19 @@ where
         println!("Hi from start. You requested: {}", req.path());
 
         let identity = req.get_identity();
-        let (id, username, exp, user) = if identity.is_none() {
-            (None, None, None, None)
-        } else {
-            if let Ok(claim) = functions::get_info_token(identity.unwrap()) {
-                (
-                    Some(claim.claims.id.clone()),
-                    Some(claim.claims.username.clone()),
-                    Some(claim.claims.exp),
-                    Some(claim),
-                )
-            } else {
-                (None, None, None, None)
+        let (id, username, exp, user) = match identity {
+            None => (None, None, None, None),
+            Some(iden) => {
+                if let Ok(claim) = functions::get_info_token(iden) {
+                    (
+                        Some(claim.claims.id),
+                        Some(claim.claims.username.clone()),
+                        Some(claim.claims.exp),
+                        Some(claim),
+                    )
+                } else {
+                    (None, None, None, None)
+                }
             }
         };
         req.extensions_mut()
@@ -79,7 +80,7 @@ where
 
         Box::pin(async move {
             let mut res = fut.await?;
-            if id.is_some() && username.is_some() && exp.is_some() {
+            if let (Some(i), Some(u), Some(e)) = (id, username, exp) {
                 let expiry = std::env::var("EXPIRY")
                     .expect("EXPIRY")
                     .parse::<i64>()
@@ -88,14 +89,13 @@ where
                     .checked_add_signed(Duration::hours(expiry / 2))
                     .expect("invalid timestamp")
                     .timestamp() as usize
-                    >= exp.unwrap()
+                    >= e
                 {
-                    let identity =
-                        if let Ok(claims) = functions::create_jwt(id.unwrap(), username.unwrap()) {
-                            Some(claims)
-                        } else {
-                            None
-                        };
+                    let identity = if let Ok(claims) = functions::create_jwt(i, u) {
+                        Some(claims)
+                    } else {
+                        None
+                    };
                     cookie_policy()
                         .to_response(identity, true, &mut res)
                         .await?;

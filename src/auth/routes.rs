@@ -11,7 +11,7 @@ async fn register_user(
     println!("here");
     web::block(move || {
         let conn = pool.get()?;
-        controllers::insert_new_user(&form.username, &form.password, &form.email, &conn)
+        controllers::insert_new_user(&form.firstname, &form.lastname, &form.password, &form.email, &conn)
     })
     .await
     .map_err(|e| {
@@ -42,7 +42,7 @@ async fn login_user(
 ) -> Result<HttpResponse, Error> {
     let (is_verified, token, status) = web::block(move || {
         let conn = pool.get()?;
-        controllers::verify_user_by_username(&form.username, &form.password, &conn)
+        controllers::verify_user_by_email(&form.email, &form.password, &conn)
     })
     .await
     .map_err(|e| {
