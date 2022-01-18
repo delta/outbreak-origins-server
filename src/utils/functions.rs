@@ -1,4 +1,4 @@
-use crate::models::Claims;
+use crate::db::models::Claims;
 use chrono::{Duration, Utc};
 use jsonwebtoken::{
     decode, encode, errors::Result, Algorithm, DecodingKey, EncodingKey, Header, TokenData,

@@ -1,4 +1,4 @@
-use crate::models::Claims;
+use crate::db::models::Claims;
 use crate::utils::functions;
 use actix_web::HttpMessage;
 use chrono::{Duration, Utc};

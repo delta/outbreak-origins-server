@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use crate::models;
+use crate::db::models;
 use crate::utils::{functions::create_jwt, types::DbError};
 use bcrypt::{hash, verify, DEFAULT_COST};
 
@@ -11,7 +11,7 @@ pub fn insert_new_user(
     femail: &str,
     conn: &PgConnection,
 ) -> Result<(), DbError> {
-    use crate::schema::users::dsl::*;
+    use crate::db::schema::users::dsl::*;
     let new_user = models::NewUser {
         firstname: ffirstname.to_owned(),
         lastname: flastname.to_owned(),
@@ -28,7 +28,7 @@ pub fn verify_user_by_email(
     fpassword: &str,
     conn: &PgConnection,
 ) -> Result<(bool, String, String), DbError> {
-    use crate::schema::users::dsl::*;
+    use crate::db::schema::users::dsl::*;
     let user = users
         .filter(email.eq(femail))
         .first::<models::User>(conn)

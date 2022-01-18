@@ -1,9 +1,7 @@
-mod jwt;
-mod types;
-mod user;
 mod events;
+mod jwt;
+mod user;
 
+pub use events::Event;
 pub use jwt::Claims;
-pub use types::DbPool;
 pub use user::{NewUser, User};
-pub use events::{Event};

@@ -5,7 +5,7 @@ use virus_simulator::Simulator;
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
 use actix_web::{web, HttpResponse};
-use actix_web_actors::ws;
+pub use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
 
 use std::time::{Duration, Instant};
@@ -57,7 +57,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                 let pg_pool = pg_pool_handler(pool);
                 if text == event {
                     let event_details =
-                        events::find_event_by_id(&pg_pool.expect("Can't fetch event details"), 1)
+                        events::find_event_by_id(1, &pg_pool.expect("Can't fetch event details"))
                             .unwrap()
                             .unwrap();
                     println!("{}", event_details.name);
@@ -67,7 +67,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
         }
     }
 
-    fn started(&mut self, ctx: &mut Self::Context) {
+    fn started(&mut self, _ctx: &mut Self::Context) {
         let susceptible = INITIAL_SUSCEPTIBLE;
         let exposed = INITIAL_EXPOSED;
         let infected = INITIAL_INFECTED;
@@ -91,10 +91,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
             &infection_rate,
         );
 
-        let res = Simulator::simulate(simulator, 0.0, 700.0);
-        for x in 0..700 {
-            println!("{}", res[x]);
-        }
+        let _res = Simulator::simulate(simulator, 0.0, 700.0);
     }
 }
 
@@ -125,9 +122,8 @@ impl Game {
     }
 }
 
-pub fn pg_pool_handler(pool: &(web::Data<PgPool>)) -> Result<PgPooledConnection, HttpResponse> {
+pub fn pg_pool_handler(pool: &web::Data<PgPool>) -> Result<PgPooledConnection, HttpResponse> {
     (*pool)
         .get()
         .map_err(|e| HttpResponse::InternalServerError().json(e.to_string()))
 }
-
