@@ -1,11 +1,12 @@
 use crate::auth::{controllers, response};
-use crate::models;
+use crate::db::models;
+use crate::db::PgPool;
 use actix_identity::Identity;
 use actix_web::{get, post, web, Error, HttpResponse};
 
 #[post("/user/register")]
 async fn register_user(
-    pool: web::Data<models::DbPool>,
+    pool: web::Data<PgPool>,
     form: web::Json<models::NewUser>,
 ) -> Result<HttpResponse, Error> {
     println!("here");
@@ -42,7 +43,7 @@ async fn logout_user(id: Identity) -> Result<HttpResponse, Error> {
 
 #[post("/user/login")]
 async fn login_user(
-    pool: web::Data<models::DbPool>,
+    pool: web::Data<PgPool>,
     form: web::Json<models::NewUser>,
     id: Identity,
 ) -> Result<HttpResponse, Error> {
