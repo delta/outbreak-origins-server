@@ -1,4 +1,6 @@
-use crate::db::*;
+use crate::db::types::PgPool;
+use crate::db::types::PgPooledConnection;
+use crate::db::utils::find_event_by_id;
 
 use virus_simulator::Simulator;
 
@@ -57,7 +59,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                 let pg_pool = pg_pool_handler(pool);
                 if text == event {
                     let event_details =
-                        events::find_event_by_id(1, &pg_pool.expect("Can't fetch event details"))
+                        find_event_by_id(1, &pg_pool.expect("Can't fetch event details"))
                             .unwrap()
                             .unwrap();
                     println!("{}", event_details.name);

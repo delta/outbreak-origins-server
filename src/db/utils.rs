@@ -1,17 +1,12 @@
-pub mod events;
-pub mod models;
-pub mod schema;
-
-// use std::error::Error;
-
+use crate::db::models;
+use crate::db::types::DbError;
+use crate::db::types::PgPool;
 use diesel::pg::PgConnection;
+use diesel::prelude::*;
 use dotenv::dotenv;
-use r2d2::{Pool, PooledConnection};
+use r2d2::Pool;
 pub use r2d2_diesel::ConnectionManager;
 use std::env;
-
-pub type PgPool = Pool<ConnectionManager<PgConnection>>;
-pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 
 pub fn create_db_pool() -> PgPool {
     dotenv().expect("Can't load environment variables");
@@ -20,4 +15,14 @@ pub fn create_db_pool() -> PgPool {
     Pool::builder()
         .build(manager)
         .expect("Failed to create pool")
+}
+
+pub fn find_event_by_id(
+    event_id: i32,
+    conn: &PgConnection,
+) -> Result<Option<models::Event>, DbError> {
+    use crate::db::schema::events::dsl::*;
+
+    let event_res = events.find(event_id).first(conn).optional()?;
+    Ok(event_res)
 }

@@ -1,5 +1,5 @@
+use crate::auth::utils::{create_jwt, get_info_token};
 use crate::db::models::Claims;
-use crate::utils::functions;
 use actix_web::HttpMessage;
 use chrono::{Duration, Utc};
 use jsonwebtoken::TokenData;
@@ -62,7 +62,7 @@ where
         let (id, username, exp, user) = match identity {
             None => (None, None, None, None),
             Some(iden) => {
-                if let Ok(claim) = functions::get_info_token(iden) {
+                if let Ok(claim) = get_info_token(iden) {
                     (
                         Some(claim.claims.id),
                         Some(claim.claims.username.clone()),
@@ -91,7 +91,7 @@ where
                     .timestamp() as usize
                     >= e
                 {
-                    let identity = if let Ok(claims) = functions::create_jwt(i, u) {
+                    let identity = if let Ok(claims) = create_jwt(i, u) {
                         Some(claims)
                     } else {
                         None

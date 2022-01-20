@@ -1,7 +1,8 @@
 use diesel::prelude::*;
 
+use crate::auth::utils::create_jwt;
 use crate::db::models;
-use crate::utils::{functions::create_jwt, types::DbError};
+use crate::db::types::DbError;
 use bcrypt::{hash, verify, DEFAULT_COST};
 
 pub fn insert_new_user(

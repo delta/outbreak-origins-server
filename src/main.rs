@@ -2,6 +2,8 @@
 extern crate diesel;
 extern crate dotenv;
 
+use crate::db::types::PgPool;
+use crate::db::utils::create_db_pool;
 use actix_files as fs;
 use actix_identity::IdentityService;
 use actix_web::middleware as mw;
@@ -13,13 +15,12 @@ mod actor;
 mod auth;
 mod db;
 mod middleware;
-mod utils;
 use crate::middleware as common_middleware;
 
 pub async fn ws_index(
     r: HttpRequest,
     stream: web::Payload,
-    pool: web::Data<db::PgPool>,
+    pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, Error> {
     println! {"{:?}",r};
     let res = actor::ws::start(actor::Game::new(pool), &r, stream);
@@ -34,7 +35,7 @@ async fn main() -> std::io::Result<()> {
         std::process::exit(1)
     }
 
-    let pool = db::create_db_pool();
+    let pool = create_db_pool();
     let bind = "127.0.0.1:8081";
     HttpServer::new(move || {
         App::new()
