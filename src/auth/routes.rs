@@ -1,4 +1,4 @@
-use crate::auth::{controllers, response};
+use crate::auth::{controllers, extractors, response};
 use crate::db::models;
 use crate::db::types::PgPool;
 use actix_identity::Identity;
@@ -9,7 +9,6 @@ async fn register_user(
     pool: web::Data<PgPool>,
     form: web::Json<models::NewUser>,
 ) -> Result<HttpResponse, Error> {
-    println!("here");
     web::block(move || {
         let conn = pool.get()?;
         controllers::insert_new_user(
@@ -41,10 +40,17 @@ async fn logout_user(id: Identity) -> Result<HttpResponse, Error> {
     Ok(resp)
 }
 
+#[get("/checkauth")]
+async fn check_auth(user: extractors::Authenticated) -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::Ok().json(response::CheckAuthResult {
+        status: user.is_some(),
+    }))
+}
+
 #[post("/user/login")]
 async fn login_user(
     pool: web::Data<PgPool>,
-    form: web::Json<models::NewUser>,
+    form: web::Json<models::LoginUser>,
     id: Identity,
 ) -> Result<HttpResponse, Error> {
     let (is_verified, token, status) = web::block(move || {
@@ -72,6 +78,7 @@ pub fn auth_routes(cfg: &mut web::ServiceConfig) {
         web::scope("/auth")
             .service(register_user)
             .service(logout_user)
-            .service(login_user),
+            .service(login_user)
+            .service(check_auth),
     );
 }

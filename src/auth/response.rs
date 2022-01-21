@@ -10,3 +10,8 @@ pub struct AuthResult {
 pub struct LogoutResult {
     pub status: bool,
 }
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CheckAuthResult {
+    pub status: bool,
+}

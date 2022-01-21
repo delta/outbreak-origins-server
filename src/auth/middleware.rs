@@ -1,8 +1,7 @@
 use crate::auth::utils::{create_jwt, get_info_token};
 use crate::db::models::Claims;
 use actix_web::HttpMessage;
-use chrono::{Duration, Utc};
-use jsonwebtoken::TokenData;
+use chrono::{Duration, TimeZone, Utc};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -56,42 +55,59 @@ where
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
-        println!("Hi from start. You requested: {}", req.path());
+        println!("You requested: {}", req.path());
 
         let identity = req.get_identity();
-        let (id, username, exp, user) = match identity {
-            None => (None, None, None, None),
+        let (id, email, exp, created_at, user) = match identity {
+            None => (None, None, None, None, None),
             Some(iden) => {
                 if let Ok(claim) = get_info_token(iden) {
                     (
                         Some(claim.claims.id),
-                        Some(claim.claims.username.clone()),
+                        Some(claim.claims.email.clone()),
                         Some(claim.claims.exp),
-                        Some(claim),
+                        Some(claim.claims.created_at),
+                        Some(claim.claims),
                     )
                 } else {
-                    (None, None, None, None)
+                    (None, None, None, None, None)
                 }
             }
         };
-        req.extensions_mut()
-            .insert::<Option<TokenData<Claims>>>(user);
+        req.extensions_mut().insert::<Option<Claims>>(user);
         let fut = self.service.call(req);
 
         Box::pin(async move {
             let mut res = fut.await?;
-            if let (Some(i), Some(u), Some(e)) = (id, username, exp) {
+            if let (Some(i), Some(u), Some(e), Some(cr)) = (id, email, exp, created_at) {
                 let expiry = std::env::var("EXPIRY")
                     .expect("EXPIRY")
                     .parse::<i64>()
                     .expect("Needed a number");
+                let max_age = std::env::var("MAX_AGE")
+                    .expect("MAX_AGE")
+                    .parse::<i64>()
+                    .expect("Needed a number");
+                let add = if expiry < 2 {
+                    Duration::seconds(expiry * 30)
+                } else {
+                    Duration::hours(expiry / 2)
+                };
                 if Utc::now()
-                    .checked_add_signed(Duration::hours(expiry / 2))
+                    .checked_add_signed(add)
                     .expect("invalid timestamp")
                     .timestamp() as usize
                     >= e
+                    && (if let Some(dur) = Utc
+                        .timestamp(cr as i64, 0)
+                        .checked_add_signed(Duration::hours(max_age))
+                    {
+                        dur > Utc::now()
+                    } else {
+                        false
+                    })
                 {
-                    let identity = if let Ok(claims) = create_jwt(i, u) {
+                    let identity = if let Ok(claims) = create_jwt(i, u, created_at) {
                         Some(claims)
                     } else {
                         None
@@ -102,7 +118,7 @@ where
                 }
             }
 
-            println!("Hi from response");
+            println!("Response");
             Ok(res)
         })
     }

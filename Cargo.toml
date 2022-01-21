@@ -8,8 +8,6 @@ edition = "2021"
 [dependencies]
 
 jsonwebtoken = "7.2.0"
-
-
 serde = {version = "1.0", features=["derive"]}
 serde_json = "1.0"
 bcrypt = "0.10"
@@ -18,15 +16,13 @@ actix-identity = "0.3.1"
 chrono = "0.4"
 futures = "0.3.19"
 virus_simulator = { path = "virus-simulator"}
-
 diesel = { version = "1.4.4", features = ["postgres"] }
 dotenv = "0.15.0"
 r2d2 = "0.8.9"
 r2d2-diesel = "*"
-
 actix = "0.10"
 actix-codec = "0.3"
 actix-web = "3"
 actix-web-actors = "3"
 actix-files = "0.3"
-
+thiserror = "1.0.30"
