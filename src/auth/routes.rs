@@ -1,6 +1,6 @@
 use crate::auth::{controllers, response};
 use crate::db::models;
-use crate::db::PgPool;
+use crate::db::types::PgPool;
 use actix_identity::Identity;
 use actix_web::{get, post, web, Error, HttpResponse};
 
