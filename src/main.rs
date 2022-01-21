@@ -36,7 +36,8 @@ async fn main() -> std::io::Result<()> {
     }
 
     let pool = create_db_pool();
-    let bind = "127.0.0.1:8081";
+    let app_url = dotenv::var("APP_URL").unwrap();
+
     HttpServer::new(move || {
         App::new()
             // set up DB pool to be used with web::Data<Pool> extractor
@@ -49,7 +50,7 @@ async fn main() -> std::io::Result<()> {
             .service(fs::Files::new("/events", "static/").index_file("index.html"))
             .configure(auth::routes::auth_routes)
     })
-    .bind(&bind)?
+    .bind(&app_url)?
     .run()
     .await
 }

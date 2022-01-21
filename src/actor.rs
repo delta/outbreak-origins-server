@@ -1,5 +1,4 @@
-use crate::db::types::PgPool;
-use crate::db::types::PgPooledConnection;
+use crate::db::types::{PgPool, PgPooledConnection};
 use crate::db::utils::find_event_by_id;
 
 use virus_simulator::Simulator;
