@@ -40,10 +40,16 @@ table! {
         email -> Text,
         firstname -> Text,
         lastname -> Text,
+        score -> Int4,
     }
 }
 
 joinable!(status -> events (current_event));
 joinable!(status -> regions (regions));
 
-allow_tables_to_appear_in_same_query!(events, regions, status,);
+allow_tables_to_appear_in_same_query!(
+    events,
+    regions,
+    status,
+    users,
+);

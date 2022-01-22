@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::db::schema::users;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Identifiable, Debug, Clone, Serialize, Deserialize, Queryable)]
 pub struct User {
     pub id: i32,
     pub password: Option<String>,
@@ -10,6 +10,7 @@ pub struct User {
     pub email: String,
     pub firstname: String,
     pub lastname: String,
+    pub score: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
@@ -19,10 +20,18 @@ pub struct NewUser {
     pub lastname: String,
     pub password: String,
     pub email: String,
+    pub score: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoginUser {
     pub password: String,
     pub email: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+pub struct LeaderboardEntry {
+    pub firstname: String,
+    pub lastname: String,
+    pub score: i32,
 }
