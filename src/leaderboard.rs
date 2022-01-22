@@ -48,10 +48,10 @@ pub async fn leaderboard(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use actix_web::{test, App};
     use super::super::TestDbManager;
+    use super::*;
     use crate::tests::utils::insert_test_user;
+    use actix_web::{test, App};
 
     fn leaderboard_routes(cfg: &mut web::ServiceConfig) {
         cfg.service(web::scope("/").service(leaderboard));
@@ -67,8 +67,11 @@ mod tests {
         )
         .await;
 
-        let test_db_conn = test_db.conn_pool.get().expect("Couldn't get test DB connection");
-        
+        let test_db_conn = test_db
+            .conn_pool
+            .get()
+            .expect("Couldn't get test DB connection");
+
         let test_users = vec![
             models::NewUser {
                 firstname: "User".to_string(),
@@ -101,7 +104,7 @@ mod tests {
         let req = test::TestRequest::get().uri("/leaderboard").to_request();
 
         let res: LeaderboardResponse = test::read_response_json(&mut test_app, req).await;
-        
+
         let mut scores = Vec::new();
         for entry in res.data.iter() {
             scores.push(entry.score);

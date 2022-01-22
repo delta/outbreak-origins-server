@@ -46,9 +46,7 @@ impl TestDbManager {
 
         embedded_migrations::run(&*conn).expect("Couldn't run migrations on Test DB");
 
-        Self {
-            conn_pool: conn_pool,
-        }
+        Self { conn_pool }
     }
 }
 
@@ -66,9 +64,7 @@ impl Drop for TestDbManager {
         let all_tables = table_list.join(", ");
 
         let query = diesel::sql_query(format!("DROP TABLE {} CASCADE", all_tables).as_str());
-        query
-            .execute(&*conn)
-            .expect("Couldn't delete tables");
+        query.execute(&*conn).expect("Couldn't delete tables");
     }
 }
 
