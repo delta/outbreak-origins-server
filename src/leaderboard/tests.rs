@@ -11,11 +11,11 @@ fn leaderboard_routes(cfg: &mut web::ServiceConfig) {
 #[actix_rt::test]
 #[cfg(test)]
 async fn test_get_leaderboard() {
+    use crate::db::models;
     use crate::leaderboard::response::LeaderboardResponse;
-	use crate::db::models;
-	use test_manager::TestDbManager;
-	use crate::tests::utils::insert_test_user;    
-	use actix_web::{test, App};
+    use crate::tests::utils::insert_test_user;
+    use actix_web::{test, App};
+    use test_manager::TestDbManager;
 
     let test_db = TestDbManager::new();
     let mut test_app = test::init_service(

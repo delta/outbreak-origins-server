@@ -10,5 +10,4 @@ diesel = { version = "1.4.4", features = ["postgres"] }
 dotenv = "0.15.0"
 r2d2 = "0.8.9"
 r2d2-diesel = "*"
-actix-web = "3"
 diesel_migrations = { version = "1.4.0", features = ["postgres"] }
