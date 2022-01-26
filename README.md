@@ -5,6 +5,7 @@
 - Install postgresql
 - Create your user and change the .env file to reflect that
 - Create the 'outbreak-origins' database
+- Create a database 'oo-test' to run integration tests
 - Run `diesel migration run`
 
 ### Dev
