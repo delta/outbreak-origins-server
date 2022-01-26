@@ -48,7 +48,7 @@ pub async fn leaderboard(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>
 
 #[cfg(test)]
 mod tests {
-    use super::super::TestDbManager;
+    use test_manager::TestDbManager;
     use super::*;
     use crate::tests::utils::insert_test_user;
     use actix_web::{test, App};
