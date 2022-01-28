@@ -14,7 +14,9 @@ use dotenv::dotenv;
 mod actor;
 mod auth;
 mod db;
+mod leaderboard;
 mod middleware;
+mod tests;
 use crate::middleware as common_middleware;
 
 pub async fn ws_index(

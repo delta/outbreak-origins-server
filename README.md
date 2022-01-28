@@ -4,6 +4,7 @@
 
 - Install postgresql
 - Create your user and change the .env file to reflect that
+- Make sure the user has the CREATEDB permission
 - Create the 'outbreak-origins' database
 - Run `diesel migration run`
 

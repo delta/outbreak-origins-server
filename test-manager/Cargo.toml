@@ -1,0 +1,13 @@
+[package]
+name = "test_manager"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+diesel = { version = "1.4.4", features = ["postgres"] }
+dotenv = "0.15.0"
+r2d2 = "0.8.9"
+r2d2-diesel = "*"
+diesel_migrations = { version = "1.4.0", features = ["postgres"] }
