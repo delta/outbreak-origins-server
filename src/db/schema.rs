@@ -47,9 +47,4 @@ table! {
 joinable!(status -> events (current_event));
 joinable!(status -> regions (regions));
 
-allow_tables_to_appear_in_same_query!(
-    events,
-    regions,
-    status,
-    users,
-);
+allow_tables_to_appear_in_same_query!(events, regions, status, users,);
