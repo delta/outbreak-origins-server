@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
-pub struct LevelInfo {
+pub struct LevelRequest {
     pub level: usize,
 }
 
 #[derive(Deserialize)]
 pub struct LevelDetails {
-    pub level: LevelResult,
+    pub level: LevelResponse,
 }
 
 #[derive(Deserialize)]
@@ -16,7 +16,7 @@ pub struct Levels {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LevelResult {
+pub struct LevelResponse {
     pub initial_susceptible: f64,
     pub initial_exposed: f64,
     pub initial_infected: f64,

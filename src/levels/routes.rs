@@ -3,11 +3,11 @@ use actix_web::{post, web, Error, HttpResponse};
 use std::fs::File;
 
 #[post("/dashboard")]
-async fn level_details(level: web::Json<response::LevelInfo>) -> Result<HttpResponse, Error> {
+async fn level_details(level: web::Json<response::LevelRequest>) -> Result<HttpResponse, Error> {
     let mut file = File::open("src/game/levelDetails.json").unwrap();
     let json: response::Levels = serde_json::from_reader(&mut file).unwrap();
     match level.level {
-        i @ (1..=4) => Ok(HttpResponse::Ok().json(response::LevelResult {
+        i @ (1..=4) => Ok(HttpResponse::Ok().json(response::LevelResponse {
             initial_susceptible: json.levels[i - 1].level.initial_susceptible,
             initial_exposed: json.levels[i - 1].level.initial_exposed,
             initial_infected: json.levels[i - 1].level.initial_infected,
