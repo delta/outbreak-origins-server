@@ -17,8 +17,12 @@ mod db;
 mod leaderboard;
 mod levels;
 mod middleware;
+<<<<<<< HEAD
 mod tests;
 
+=======
+mod routes;
+>>>>>>> 4b6173f (feat: Adds Levels Route)
 use crate::middleware as common_middleware;
 
 pub async fn ws_index(
