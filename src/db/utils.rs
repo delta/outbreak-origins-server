@@ -10,8 +10,9 @@ use std::env;
 
 pub fn create_db_pool() -> PgPool {
     dotenv().expect("Can't load environment variables");
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
+    let db_base_url = env::var("DB_BASE_URL").expect("DB_BASE_URL must be set");
+    let db_name = env::var("DB_NAME").expect("DB_NAME must be set");
+    let manager = ConnectionManager::<PgConnection>::new(&format!("{}/{}", db_base_url, db_name));
     Pool::builder()
         .build(manager)
         .expect("Failed to create pool")
