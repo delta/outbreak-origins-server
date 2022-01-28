@@ -19,11 +19,16 @@ mod leaderboard;
 mod levels;
 mod middleware;
 <<<<<<< HEAD
+<<<<<<< HEAD
 mod tests;
 
 =======
 mod routes;
 >>>>>>> 4b6173f (feat: Adds Levels Route)
+=======
+mod tests;
+
+>>>>>>> 91d2617 (refactor: refactors levels backend)
 use crate::middleware as common_middleware;
 
 pub async fn ws_index(
