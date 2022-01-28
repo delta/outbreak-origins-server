@@ -1,11 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
-<<<<<<< HEAD
 pub struct LevelRequest {
-=======
-pub struct LevelInfo {
->>>>>>> 91d2617 (refactor: refactors levels backend)
     pub level: usize,
 }
 
