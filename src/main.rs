@@ -15,8 +15,10 @@ mod actor;
 mod auth;
 mod db;
 mod leaderboard;
+mod levels;
 mod middleware;
 mod tests;
+
 use crate::middleware as common_middleware;
 
 pub async fn ws_index(
@@ -51,6 +53,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/ws/").route(web::get().to(ws_index)))
             .service(fs::Files::new("/events", "static/").index_file("index.html"))
             .configure(auth::routes::auth_routes)
+            .configure(levels::routes::game_routes)
     })
     .bind(&app_url)?
     .run()
