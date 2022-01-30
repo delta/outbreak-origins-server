@@ -19,6 +19,7 @@ mod levels;
 mod middleware;
 mod tests;
 
+mod utils;
 use crate::middleware as common_middleware;
 
 pub async fn ws_index(

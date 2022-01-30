@@ -9,7 +9,11 @@ use actix_web::{web, HttpResponse};
 pub use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
 
+use std::fmt::Write;
+use std::fs;
 use std::time::{Duration, Instant};
+#[path = "utils.rs"]
+mod utils;
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 
@@ -56,12 +60,59 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                 let event = String::from("event1");
                 let pool = &(self.pool);
                 let pg_pool = pg_pool_handler(pool);
-                if text == event {
-                    let event_details =
-                        find_event_by_id(1, &pg_pool.expect("Can't fetch event details"))
-                            .unwrap()
-                            .unwrap();
-                    println!("{}", event_details.name);
+                if text == "START" {
+                    let mut contents = fs::read_to_string("/Users/shankarkrishnamoorthy/Desktop/Delta/outbreak-origins-server/src/init_data.json")
+        .expect("Something went wrong reading the file");
+
+                    //println!("{}", contents);
+                    let data = serde_json::from_str::<utils::types::InitParams>(&contents).unwrap();
+
+                    //println!("{}", data.num_sections);
+
+                    // Instance of Simulator
+                    let sim = Simulator::new(
+                        &data.section_data[0].init_params.susceptible,
+                        &data.section_data[0].init_params.exposed,
+                        &data.section_data[0].init_params.infectious,
+                        &data.section_data[0].init_params.removed,
+                        &data.section_data[0].init_params.current_reproduction_number,
+                        &data.section_data[0].init_params.ideal_reproduction_number,
+                        &data.section_data[0].init_params.compliance_factor,
+                        &data.section_data[0].init_params.recovery_rate,
+                        &data.section_data[0].init_params.infection_rate,
+                    );
+
+                    let f = sim.simulate(0_f64, 2_f64);
+                    // serilising the data
+                    let mut output = String::new();
+                    output.write_str("{").unwrap();
+                    for (j, state) in f.iter().enumerate() {
+                        let mut i = 1;
+                        output.write_str("[").unwrap();
+                        for val in state.iter() {
+                            if i % 5 == 0 {
+                                output.write_fmt(format_args!("{} , ", val)).unwrap();
+                            } else {
+                                output
+                                    .write_fmt(format_args!(
+                                        "{} , ",
+                                        val * data.section_data[0].population
+                                    ))
+                                    .unwrap();
+                            }
+                            output.pop();
+                            output.pop();
+                            i = i + 1;
+                        }
+                        output.write_str("], ").unwrap();
+                        output.pop();
+                        output.pop();
+                        output.write_str(",").unwrap();
+                    }
+                    output.write_str("}").unwrap();
+                    //println!("{}", output);
+
+                    ctx.text(output);
                 }
             }
             _ => ctx.stop(),
