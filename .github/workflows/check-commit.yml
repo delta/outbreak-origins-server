@@ -1,6 +1,13 @@
 name: Check Commit Message
 
-on: [pull_request, push]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, edited, reopened]
+    branches:
+      - main
 
 jobs:
   check-commit:

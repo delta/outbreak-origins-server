@@ -1,6 +1,13 @@
 # From https://github.com/actions-rs/example/blob/master/.github/workflows/quickstart.yml
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, edited, reopened]
+    branches:
+      - main
 
 name: Rust Checks
 
