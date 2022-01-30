@@ -1,19 +1,14 @@
-use crate::db::types::{PgPool, PgPooledConnection};
-use crate::db::utils::find_event_by_id;
-
-use virus_simulator::Simulator;
-
+use crate::db::types::PgPool;
+use crate::utils::{helpers, types};
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
-use actix_web::{web, HttpResponse};
+use actix_web::web;
 pub use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
-
-use std::fmt::Write;
 use std::fs;
+use std::path::Path;
 use std::time::{Duration, Instant};
-#[path = "utils.rs"]
-mod utils;
+use virus_simulator::Simulator;
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 
@@ -32,7 +27,7 @@ const INITIAL_SOCIAL_PARAMETER: f64 = 0.5;
 
 pub struct Game {
     heartbeat: Instant,
-    pool: web::Data<PgPool>,
+    _pool: web::Data<PgPool>,
 }
 
 impl Actor for Game {
@@ -57,17 +52,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
             }
             Ok(Message::Text(text)) => {
                 println!("{}", text);
-                let event = String::from("event1");
-                let pool = &(self.pool);
-                let pg_pool = pg_pool_handler(pool);
                 if text == "START" {
-                    let mut contents = fs::read_to_string("/Users/shankarkrishnamoorthy/Desktop/Delta/outbreak-origins-server/src/init_data.json")
-        .expect("Something went wrong reading the file");
+                    let path = Path::new("src/init_data.json");
+                    let contents =
+                        fs::read_to_string(&path).expect("Something went wrong reading the file");
 
-                    //println!("{}", contents);
-                    let data = serde_json::from_str::<utils::types::InitParams>(&contents).unwrap();
-
-                    //println!("{}", data.num_sections);
+                    let data = serde_json::from_str::<types::InitParams>(&contents).unwrap();
 
                     // Instance of Simulator
                     let sim = Simulator::new(
@@ -83,34 +73,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                     );
 
                     let f = sim.simulate(0_f64, 2_f64);
+
                     // serilising the data
                     let mut output = String::new();
-                    output.write_str("{").unwrap();
-                    for (j, state) in f.iter().enumerate() {
-                        let mut i = 1;
-                        output.write_str("[").unwrap();
-                        for val in state.iter() {
-                            if i % 5 == 0 {
-                                output.write_fmt(format_args!("{} , ", val)).unwrap();
-                            } else {
-                                output
-                                    .write_fmt(format_args!(
-                                        "{} , ",
-                                        val * data.section_data[0].population
-                                    ))
-                                    .unwrap();
-                            }
-                            output.pop();
-                            output.pop();
-                            i = i + 1;
-                        }
-                        output.write_str("], ").unwrap();
-                        output.pop();
-                        output.pop();
-                        output.write_str(",").unwrap();
-                    }
-                    output.write_str("}").unwrap();
-                    //println!("{}", output);
+                    helpers::writer(&mut output, &f, data.section_data[0].population);
 
                     ctx.text(output);
                 }
@@ -151,7 +117,7 @@ impl Game {
     pub fn new(conn_pool: web::Data<PgPool>) -> Self {
         Self {
             heartbeat: Instant::now(),
-            pool: conn_pool,
+            _pool: conn_pool,
         }
     }
 
@@ -172,10 +138,4 @@ impl Game {
             ctx.ping(b"");
         });
     }
-}
-
-pub fn pg_pool_handler(pool: &web::Data<PgPool>) -> Result<PgPooledConnection, HttpResponse> {
-    (*pool)
-        .get()
-        .map_err(|e| HttpResponse::InternalServerError().json(e.to_string()))
 }

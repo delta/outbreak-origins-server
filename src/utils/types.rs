@@ -14,7 +14,6 @@ pub struct SectionData {
 
 #[derive(Serialize, Deserialize)]
 pub struct InitSimulationParams {
-    //TODO: Rust Structure for JSON - Done
     pub susceptible: f64,
     pub exposed: f64,
     pub infectious: f64,

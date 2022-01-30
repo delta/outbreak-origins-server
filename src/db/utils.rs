@@ -18,6 +18,7 @@ pub fn create_db_pool() -> PgPool {
         .expect("Failed to create pool")
 }
 
+#[allow(dead_code)]
 pub fn find_event_by_id(
     event_id: i32,
     conn: &PgConnection,
