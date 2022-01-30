@@ -3,11 +3,14 @@ use crate::leaderboard::response::LeaderboardResponse;
 use crate::PgPool;
 use actix_web::{get, web, Error, HttpResponse};
 
-#[get("/leaderboard")]
-pub async fn leaderboard(pool: web::Data<PgPool>) -> Result<HttpResponse, Error> {
+#[get("/leaderboard/{pg_num}")]
+pub async fn leaderboard(
+    web::Path(pg_num): web::Path<u32>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, Error> {
     let leaderboard = web::block(move || {
         let conn = pool.get()?;
-        get_leaderboard(&conn)
+        get_leaderboard(&conn, pg_num)
     })
     .await
     .map_err(|e| {

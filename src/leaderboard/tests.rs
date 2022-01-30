@@ -37,6 +37,7 @@ async fn test_get_leaderboard() {
             password: "".to_string(),
             email: "usera@email.com".to_string(),
             score: 10,
+            money: 100,
         },
         models::NewUser {
             firstname: "User".to_string(),
@@ -44,6 +45,7 @@ async fn test_get_leaderboard() {
             password: "".to_string(),
             email: "userb@email.com".to_string(),
             score: 50,
+            money: 25,
         },
         models::NewUser {
             firstname: "User".to_string(),
@@ -51,6 +53,7 @@ async fn test_get_leaderboard() {
             password: "".to_string(),
             email: "userc@email.com".to_string(),
             score: 0,
+            money: 0,
         },
     ];
 
@@ -59,7 +62,7 @@ async fn test_get_leaderboard() {
         res.expect("Couldn't insert test user");
     }
 
-    let req = test::TestRequest::get().uri("/leaderboard").to_request();
+    let req = test::TestRequest::get().uri("/leaderboard/1").to_request();
 
     let res: LeaderboardResponse = test::read_response_json(&mut test_app, req).await;
 
