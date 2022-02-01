@@ -2,11 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
 pub struct LevelRequest {
-<<<<<<< HEAD
     pub level: i32,
-=======
-    pub level: usize,
->>>>>>> d620c4c (refactor: better names for Levels Struct)
 }
 
 
