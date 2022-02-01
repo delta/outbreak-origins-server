@@ -14,20 +14,12 @@ use dotenv::dotenv;
 mod actor;
 mod auth;
 mod db;
+mod game;
 mod leaderboard;
 mod levels;
 mod middleware;
-<<<<<<< HEAD
-<<<<<<< HEAD
 mod tests;
 
-=======
-mod routes;
->>>>>>> 4b6173f (feat: Adds Levels Route)
-=======
-mod tests;
-
->>>>>>> 91d2617 (refactor: refactors levels backend)
 use crate::middleware as common_middleware;
 
 pub async fn ws_index(
@@ -62,7 +54,8 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/ws/").route(web::get().to(ws_index)))
             .service(fs::Files::new("/events", "static/").index_file("index.html"))
             .configure(auth::routes::auth_routes)
-            .configure(levels::routes::game_routes)
+            .configure(levels::routes::level_select_routes)
+            .configure(game::routes::game_routes)
     })
     .bind(&app_url)?
     .run()

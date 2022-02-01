@@ -2,9 +2,9 @@ use crate::levels::response;
 use actix_web::{post, web, Error, HttpResponse};
 use std::fs::File;
 
-#[post("/dashboard")]
+#[post("")]
 async fn level_details(level: web::Json<response::LevelRequest>) -> Result<HttpResponse, Error> {
-    let mut file = File::open("src/game/levelDetails.json").unwrap();
+    let mut file = File::open("src/levels/levelDetails.json").unwrap();
     let json: response::Levels = serde_json::from_reader(&mut file).unwrap();
     match level.level {
         i @ (1..=4) => Ok(HttpResponse::Ok().json(response::LevelResponse {
@@ -24,6 +24,6 @@ async fn level_details(level: web::Json<response::LevelRequest>) -> Result<HttpR
     }
 }
 
-pub fn game_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/user/api").service(level_details));
+pub fn level_select_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(web::scope("/user/api/dashboard").service(level_details));
 }
