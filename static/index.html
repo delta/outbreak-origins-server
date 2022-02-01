@@ -8,12 +8,15 @@
     $(function() {
       var conn = null;
       function connect() {
-        disconnect();
+        //disconnect();
         var wsUri = (window.location.protocol=='https:'&&'wss://'||'ws://')+window.location.host + '/ws/';
         conn = new WebSocket(wsUri);
         conn.onopen = function() {
           update_ui();
         };
+        conn.onmessage = function(e) {
+          console.log(e.data);
+        }
         conn.onclose = function() {
           conn = null;
           update_ui();
@@ -45,7 +48,7 @@
         return false;
       });
       $("#event").click(() => {
-        conn.send("event1");
+        conn.send("START");
         return false;
       })
 

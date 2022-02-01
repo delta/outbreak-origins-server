@@ -1,15 +1,14 @@
-use crate::db::types::{PgPool, PgPooledConnection};
-use crate::db::utils::find_event_by_id;
-
-use virus_simulator::Simulator;
-
+use crate::db::types::PgPool;
+use crate::utils::{helpers, types};
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
-use actix_web::{web, HttpResponse};
+use actix_web::web;
 pub use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
-
+use std::fs;
+use std::path::Path;
 use std::time::{Duration, Instant};
+use virus_simulator::Simulator;
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 
@@ -28,7 +27,7 @@ const INITIAL_SOCIAL_PARAMETER: f64 = 0.5;
 
 pub struct Game {
     heartbeat: Instant,
-    pool: web::Data<PgPool>,
+    _pool: web::Data<PgPool>,
 }
 
 impl Actor for Game {
@@ -53,15 +52,33 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
             }
             Ok(Message::Text(text)) => {
                 println!("{}", text);
-                let event = String::from("event1");
-                let pool = &(self.pool);
-                let pg_pool = pg_pool_handler(pool);
-                if text == event {
-                    let event_details =
-                        find_event_by_id(1, &pg_pool.expect("Can't fetch event details"))
-                            .unwrap()
-                            .unwrap();
-                    println!("{}", event_details.name);
+                if text == "START" {
+                    let path = Path::new("src/init_data.json");
+                    let contents =
+                        fs::read_to_string(&path).expect("Something went wrong reading the file");
+
+                    let data = serde_json::from_str::<types::InitParams>(&contents).unwrap();
+
+                    // Instance of Simulator
+                    let sim = Simulator::new(
+                        &data.section_data[0].init_params.susceptible,
+                        &data.section_data[0].init_params.exposed,
+                        &data.section_data[0].init_params.infectious,
+                        &data.section_data[0].init_params.removed,
+                        &data.section_data[0].init_params.current_reproduction_number,
+                        &data.section_data[0].init_params.ideal_reproduction_number,
+                        &data.section_data[0].init_params.compliance_factor,
+                        &data.section_data[0].init_params.recovery_rate,
+                        &data.section_data[0].init_params.infection_rate,
+                    );
+
+                    let f = sim.simulate(0_f64, 2_f64);
+
+                    // serilising the data
+                    let mut output = String::new();
+                    helpers::writer(&mut output, &f, data.section_data[0].population);
+
+                    ctx.text(output);
                 }
             }
             _ => ctx.stop(),
@@ -100,7 +117,7 @@ impl Game {
     pub fn new(conn_pool: web::Data<PgPool>) -> Self {
         Self {
             heartbeat: Instant::now(),
-            pool: conn_pool,
+            _pool: conn_pool,
         }
     }
 
@@ -121,10 +138,4 @@ impl Game {
             ctx.ping(b"");
         });
     }
-}
-
-pub fn pg_pool_handler(pool: &web::Data<PgPool>) -> Result<PgPooledConnection, HttpResponse> {
-    (*pool)
-        .get()
-        .map_err(|e| HttpResponse::InternalServerError().json(e.to_string()))
 }
