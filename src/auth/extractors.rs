@@ -3,10 +3,10 @@ use crate::db::models::Claims;
 use actix_web::FromRequest;
 use futures::future::{ready, Ready};
 
-type AuthenticationInfo = Option<Claims>;
+pub type AuthenticationInfo = Option<Claims>;
 
 #[derive(Debug)]
-pub struct Authenticated(AuthenticationInfo);
+pub struct Authenticated(pub AuthenticationInfo);
 
 impl FromRequest for Authenticated {
     type Config = ();

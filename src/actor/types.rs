@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+// Simulation Types
 #[derive(Serialize, Deserialize)]
 pub struct InitParams {
     pub num_sections: i32,

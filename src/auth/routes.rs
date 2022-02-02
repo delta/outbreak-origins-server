@@ -42,8 +42,10 @@ async fn logout_user(id: Identity) -> Result<HttpResponse, Error> {
 
 #[get("/checkauth")]
 async fn check_auth(user: extractors::Authenticated) -> Result<HttpResponse, Error> {
+    let email = user.0.as_ref().map(|y| y.email.clone());
     Ok(HttpResponse::Ok().json(response::CheckAuthResult {
         status: user.is_some(),
+        email,
     }))
 }
 
