@@ -4,32 +4,32 @@ use strum_macros::Display;
 
 // Event types
 #[derive(Serialize)]
-pub struct NewsEvent {
+pub struct NewsResponse {
     pub img: String,
     pub heading: String,
     pub content: String,
 }
 
 #[derive(Serialize)]
-pub struct StartEvent {
+pub struct StartResponse {
     pub payload: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct SentEvent {
+pub struct WSPayload {
     event_type: String,
     payload: String,
 }
 
 enum_str!(
-    enum EventType {
+    enum WSResponse {
         // News(NewsEvent),
-        Start(StartEvent),
+        Start(StartResponse),
     }
 );
 
 #[derive(Display)]
-pub enum ReceivedEvent {
+pub enum WSRequest {
     // News,
     Start,
 }

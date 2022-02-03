@@ -2,7 +2,7 @@ use crate::db::types::PgPool;
 
 use virus_simulator::Simulator;
 
-use crate::actor::events::types::{EventType, ReceivedEvent, StartEvent};
+use crate::actor::events::types::{StartResponse, WSRequest, WSResponse};
 use crate::actor::{types::InitParams, utils::serialize_state};
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
@@ -44,7 +44,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
             }
             Ok(Message::Text(text)) => {
                 println!("{}", text);
-                if text == ReceivedEvent::Start.to_string() {
+                if text == WSRequest::Start.to_string() {
                     let path = Path::new("src/init_data.json");
                     let contents =
                         fs::read_to_string(&path).expect("Something went wrong reading the file");
@@ -68,7 +68,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
 
                     // serilising the data
                     let payload = serialize_state(&f, data.section_data[0].population);
-                    ctx.text(EventType::Start(StartEvent { payload }).stringify())
+                    ctx.text(WSResponse::Start(StartResponse { payload }).stringify())
                 }
             }
             _ => ctx.stop(),

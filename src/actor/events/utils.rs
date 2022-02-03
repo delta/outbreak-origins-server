@@ -11,7 +11,10 @@ macro_rules! enum_str {
             pub fn stringify(&self) -> String {
                 match self {
                     $($name::$eventtype(x) =>
-                      serde_json::to_string(&SentEvent{event_type: stringify!($eventtype).to_string(), payload: (serde_json::to_string(x).unwrap())}).unwrap()
+                      serde_json::to_string(&WSPayload{
+                          event_type: stringify!($eventtype).to_string(),
+                          payload: (serde_json::to_string(x).unwrap())
+                      }).unwrap()
                       ),*
                 }
             }
