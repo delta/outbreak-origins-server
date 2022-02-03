@@ -19,7 +19,6 @@ mod levels;
 mod middleware;
 mod tests;
 
-mod utils;
 use crate::middleware as common_middleware;
 
 pub async fn ws_index(
@@ -28,7 +27,7 @@ pub async fn ws_index(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, Error> {
     println! {"{:?}",r};
-    let res = actor::ws::start(actor::Game::new(pool), &r, stream);
+    let res = actor::implementation::ws::start(actor::implementation::Game::new(pool), &r, stream);
     println!("{:?}", res);
     res
 }
