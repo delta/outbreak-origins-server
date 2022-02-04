@@ -9,6 +9,7 @@ use actix::{Actor, StreamHandler};
 use actix_web::web;
 pub use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
+use serde_json;
 use std::fs;
 use std::path::Path;
 
@@ -32,8 +33,6 @@ impl Actor for Game {
 
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
     fn handle(&mut self, item: Result<Message, ProtocolError>, ctx: &mut Self::Context) {
-        println!("WS: {:?}", item);
-
         match item {
             Ok(Message::Ping(item)) => {
                 self.heartbeat = Instant::now();
@@ -44,32 +43,41 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
             }
             Ok(Message::Text(text)) => {
                 println!("{}", text);
-                if text == WSRequest::Start.to_string() {
-                    let path = Path::new("src/init_data.json");
-                    let contents =
-                        fs::read_to_string(&path).expect("Something went wrong reading the file");
+                let request = serde_json::from_str::<WSRequest>(&text).unwrap_or(WSRequest {
+                    kind: "".to_string(),
+                    payload: "".to_string(),
+                });
 
-                    let data = serde_json::from_str::<InitParams>(&contents).unwrap();
+                let res = match request.kind.as_str() {
+                    "Start" => {
+                        let path = Path::new("src/init_data.json");
+                        let contents = fs::read_to_string(&path)
+                            .expect("Something went wrong reading the file");
 
-                    // Instance of Simulator
-                    let sim = Simulator::new(
-                        &data.section_data[0].init_params.susceptible,
-                        &data.section_data[0].init_params.exposed,
-                        &data.section_data[0].init_params.infectious,
-                        &data.section_data[0].init_params.removed,
-                        &data.section_data[0].init_params.current_reproduction_number,
-                        &data.section_data[0].init_params.ideal_reproduction_number,
-                        &data.section_data[0].init_params.compliance_factor,
-                        &data.section_data[0].init_params.recovery_rate,
-                        &data.section_data[0].init_params.infection_rate,
-                    );
+                        let data = serde_json::from_str::<InitParams>(&contents).unwrap();
 
-                    let f = sim.simulate(0_f64, 2_f64);
+                        // Instance of Simulator
+                        let sim = Simulator::new(
+                            &data.section_data[0].init_params.susceptible,
+                            &data.section_data[0].init_params.exposed,
+                            &data.section_data[0].init_params.infectious,
+                            &data.section_data[0].init_params.removed,
+                            &data.section_data[0].init_params.current_reproduction_number,
+                            &data.section_data[0].init_params.ideal_reproduction_number,
+                            &data.section_data[0].init_params.compliance_factor,
+                            &data.section_data[0].init_params.recovery_rate,
+                            &data.section_data[0].init_params.infection_rate,
+                        );
 
-                    // serilising the data
-                    let payload = serialize_state(&f, data.section_data[0].population);
-                    ctx.text(WSResponse::Start(StartResponse { payload }).stringify())
-                }
+                        let f = sim.simulate(0_f64, 2_f64);
+
+                        // serilising the data
+                        let payload = serialize_state(&f, data.section_data[0].population);
+                        WSResponse::Start(StartResponse { payload })
+                    }
+                    _ => WSResponse::Error("Invalid request sent".to_string()),
+                };
+                ctx.text(res.stringify())
             }
             _ => ctx.stop(),
         }

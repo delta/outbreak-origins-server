@@ -28,4 +28,3 @@ actix-files = "0.3"
 thiserror = "1.0.30"
 actix-rt = "2.6.0"
 test_manager = { path = "test-manager" }
-strum_macros = "0.23.1"
