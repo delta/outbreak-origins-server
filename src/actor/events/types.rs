@@ -1,6 +1,5 @@
 use crate::actor::events::utils::enum_str;
 use serde::{Deserialize, Serialize};
-use strum_macros::Display;
 
 // Event types
 #[derive(Serialize)]
@@ -25,11 +24,12 @@ enum_str!(
     enum WSResponse {
         // News(NewsEvent),
         Start(StartResponse),
+        Error(String),
     }
 );
 
-#[derive(Display)]
-pub enum WSRequest {
-    // News,
-    Start,
+#[derive(Deserialize)]
+pub struct WSRequest {
+    pub kind: String,
+    pub payload: String,
 }
