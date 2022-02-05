@@ -14,6 +14,7 @@ use dotenv::dotenv;
 mod actor;
 mod auth;
 mod db;
+mod game;
 mod leaderboard;
 mod levels;
 mod middleware;
@@ -54,7 +55,8 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/ws/").route(web::get().to(ws_index)))
             .service(fs::Files::new("/events", "static/").index_file("index.html"))
             .configure(auth::routes::auth_routes)
-            .configure(levels::routes::game_routes)
+            .configure(levels::routes::level_select_routes)
+            .configure(game::routes::game_routes)
     })
     .bind(&app_url)?
     .run()
