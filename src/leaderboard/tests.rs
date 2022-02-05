@@ -1,12 +1,5 @@
 #[cfg(test)]
-use crate::leaderboard::routes::leaderboard;
-#[cfg(test)]
-use actix_web::web;
-
-#[cfg(test)]
-fn leaderboard_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/").service(leaderboard));
-}
+use crate::leaderboard::routes;
 
 #[actix_rt::test]
 #[cfg(test)]
@@ -21,7 +14,7 @@ async fn test_get_leaderboard() {
     let mut test_app = test::init_service(
         App::new()
             .data(test_db.conn_pool.clone())
-            .configure(leaderboard_routes),
+            .configure(routes::leaderboard_routes),
     )
     .await;
 
