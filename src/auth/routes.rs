@@ -2,7 +2,7 @@ use crate::auth::{controllers, extractors, response};
 use crate::db::models;
 use crate::db::types::PgPool;
 use actix_identity::Identity;
-use actix_web::{get, post, web, Error, HttpResponse};
+use actix_web::{get, http::StatusCode, post, web, Error, HttpResponse};
 
 #[post("/user/register")]
 async fn register_user(
@@ -43,10 +43,16 @@ async fn logout_user(id: Identity) -> Result<HttpResponse, Error> {
 #[get("/checkauth")]
 async fn check_auth(user: extractors::Authenticated) -> Result<HttpResponse, Error> {
     let email = user.0.as_ref().map(|y| y.email.clone());
-    Ok(HttpResponse::Ok().json(response::CheckAuthResult {
-        status: user.is_some(),
-        email,
-    }))
+    Ok(HttpResponse::Ok()
+        .status(if user.is_some() {
+            StatusCode::OK
+        } else {
+            StatusCode::UNAUTHORIZED
+        })
+        .json(response::CheckAuthResult {
+            status: user.is_some(),
+            email
+        }))
 }
 
 #[post("/user/login")]
@@ -68,10 +74,16 @@ async fn login_user(
     if is_verified {
         id.remember(token)
     }
-    let resp = HttpResponse::Ok().json(response::AuthResult {
-        is_verified,
-        status,
-    });
+    let resp = HttpResponse::Ok()
+        .status(if is_verified {
+            StatusCode::OK
+        } else {
+            StatusCode::UNAUTHORIZED
+        })
+        .json(response::AuthResult {
+            is_verified,
+            status,
+        });
     Ok(resp)
 }
 
