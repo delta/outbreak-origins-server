@@ -26,7 +26,7 @@ pub struct InitSimulationParams {
     pub infection_rate: f64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct ParamsDelta {
     pub name: String,
     pub value: f64,

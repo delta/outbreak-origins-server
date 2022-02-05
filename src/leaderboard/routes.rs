@@ -3,7 +3,7 @@ use crate::leaderboard::response::LeaderboardResponse;
 use crate::PgPool;
 use actix_web::{get, web, Error, HttpResponse};
 
-#[get("/leaderboard/{pg_num}")]
+#[get("/{pg_num}")]
 pub async fn leaderboard(
     web::Path(pg_num): web::Path<u32>,
     pool: web::Data<PgPool>,
@@ -27,5 +27,5 @@ pub async fn leaderboard(
 }
 
 pub fn leaderboard_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/").service(leaderboard));
+    cfg.service(web::scope("/leaderboard").service(leaderboard));
 }
