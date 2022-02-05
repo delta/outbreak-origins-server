@@ -6,7 +6,7 @@ use jsonwebtoken::{
 };
 
 // Result is from jsonwebtoken error
-pub fn create_jwt(id: i32, email: String, created_at: Option<usize>) -> Result<String> {
+pub fn create_jwt(id: i32, email: String, level: i32, created_at: Option<usize>) -> Result<String> {
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET");
     let expiry = std::env::var("EXPIRY")
         .expect("EXPIRY")
@@ -25,6 +25,7 @@ pub fn create_jwt(id: i32, email: String, created_at: Option<usize>) -> Result<S
         } else {
             Utc::now().timestamp() as usize
         },
+        level,
         exp: expiration as usize,
     };
     let header = Header::new(Algorithm::HS512);

@@ -58,8 +58,8 @@ where
         println!("You requested: {}", req.path());
 
         let identity = req.get_identity();
-        let (id, email, exp, created_at, user) = match identity {
-            None => (None, None, None, None, None),
+        let (id, email, exp, created_at, level, user) = match identity {
+            None => (None, None, None, None, None, None),
             Some(iden) => {
                 if let Ok(claim) = get_info_token(iden) {
                     (
@@ -67,10 +67,11 @@ where
                         Some(claim.claims.email.clone()),
                         Some(claim.claims.exp),
                         Some(claim.claims.created_at),
+                        Some(claim.claims.level),
                         Some(claim.claims),
                     )
                 } else {
-                    (None, None, None, None, None)
+                    (None, None, None, None, None, None)
                 }
             }
         };
@@ -79,7 +80,9 @@ where
 
         Box::pin(async move {
             let mut res = fut.await?;
-            if let (Some(i), Some(u), Some(e), Some(cr)) = (id, email, exp, created_at) {
+            if let (Some(i), Some(u), Some(e), Some(cr), Some(l)) =
+                (id, email, exp, created_at, level)
+            {
                 let expiry = std::env::var("EXPIRY")
                     .expect("EXPIRY")
                     .parse::<i64>()
@@ -107,7 +110,7 @@ where
                         false
                     })
                 {
-                    let identity = if let Ok(claims) = create_jwt(i, u, created_at) {
+                    let identity = if let Ok(claims) = create_jwt(i, u, l, created_at) {
                         Some(claims)
                     } else {
                         None

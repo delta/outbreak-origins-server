@@ -42,7 +42,7 @@ pub fn verify_user_by_email(
                 if verify(fpassword.to_owned(), &p)? {
                     (
                         true,
-                        create_jwt(u.id, u.email, None)?,
+                        create_jwt(u.id, u.email, u.curlevel, None)?,
                         String::from("Successfully authenticated"),
                     )
                 } else {
