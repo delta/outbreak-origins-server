@@ -33,7 +33,7 @@ enum_str!(
     }
 );
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 pub struct CurParams {
     pub susceptible: f64,
     pub exposed: f64,
@@ -48,6 +48,7 @@ pub struct CurParams {
 
 #[derive(Deserialize)]
 pub struct ControlMeasure {
+    pub level: i32,
     pub cur_date: f64,
     pub name: String,
     pub params: CurParams,
@@ -55,6 +56,7 @@ pub struct ControlMeasure {
 
 #[derive(Deserialize)]
 pub struct Event {
+    pub level: i32,
     pub cur_date: f64,
     pub name: String,
     pub params: CurParams,
