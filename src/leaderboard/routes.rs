@@ -25,3 +25,7 @@ pub async fn leaderboard(
         data: leaderboard,
     }))
 }
+
+pub fn leaderboard_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(web::scope("/").service(leaderboard));
+}
