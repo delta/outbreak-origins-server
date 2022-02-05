@@ -51,7 +51,7 @@ async fn check_auth(user: extractors::Authenticated) -> Result<HttpResponse, Err
         })
         .json(response::CheckAuthResult {
             status: user.is_some(),
-            email
+            email,
         }))
 }
 

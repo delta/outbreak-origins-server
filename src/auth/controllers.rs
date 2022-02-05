@@ -19,6 +19,7 @@ pub fn insert_new_user(
         password: hash(fpassword.to_owned(), DEFAULT_COST)?,
         email: femail.to_owned(),
         score: 0,
+        money: 0,
     };
 
     diesel::insert_into(users).values(&new_user).execute(conn)?;

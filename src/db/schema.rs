@@ -41,6 +41,7 @@ table! {
         firstname -> Text,
         lastname -> Text,
         score -> Int4,
+        money -> Int4,
     }
 }
 
