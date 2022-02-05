@@ -10,8 +10,12 @@ pub struct NewsResponse {
 }
 
 #[derive(Serialize)]
-pub struct StartResponse {
+pub struct SimulatorResponse {
     pub payload: String,
+    pub ideal_reproduction_number: f64,
+    pub compliance_factor: f64,
+    pub recovery_rate: f64,
+    pub infection_rate: f64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -23,10 +27,38 @@ pub struct WSPayload {
 enum_str!(
     enum WSResponse {
         // News(NewsEvent),
-        Start(StartResponse),
+        Start(SimulatorResponse),
+        Control(SimulatorResponse)
         Error(String),
     }
 );
+
+#[derive(Deserialize)]
+pub struct CurParams {
+    pub susceptible: f64,
+    pub exposed: f64,
+    pub infectious: f64,
+    pub removed: f64,
+    pub current_reproduction_number: f64,
+    pub ideal_reproduction_number: f64,
+    pub compliance_factor: f64,
+    pub recovery_rate: f64,
+    pub infection_rate: f64,
+}
+
+#[derive(Deserialize)]
+pub struct ControlMeasure {
+    pub cur_date: f64,
+    pub name: String,
+    pub params: CurParams,
+}
+
+#[derive(Deserialize)]
+pub struct Event {
+    pub cur_date: f64,
+    pub name: String,
+    pub params: CurParams,
+}
 
 #[derive(Deserialize)]
 pub struct WSRequest {

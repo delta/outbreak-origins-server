@@ -25,3 +25,22 @@ pub struct InitSimulationParams {
     pub recovery_rate: f64,
     pub infection_rate: f64,
 }
+
+#[derive(Deserialize)]
+pub struct ParamsDelta {
+    pub name: String,
+    pub value: f64,
+}
+
+#[derive(Deserialize)]
+pub struct ControlMeasureParams {
+    pub description: String,
+    pub params_delta: Vec<ParamsDelta>,
+}
+
+#[derive(Deserialize)]
+pub struct EventParam {
+    pub description: String,
+    pub params: Vec<ParamsDelta>,
+    pub reward: i32,
+}
