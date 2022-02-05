@@ -1,15 +1,10 @@
-<<<<<<< HEAD
+
 use crate::auth::extractors::Authenticated;
 use crate::db::types::PgPool;
 use crate::game::response;
 use crate::levels::controllers::get_current_level;
 use actix_web::{get, web, Error, HttpResponse};
 use std::fs::File;
-=======
-use actix_web::{post, web, Error, HttpResponse};
-use std::fs::File;
-
->>>>>>> a13592d (feat: Adds start-level route)
 use std::io::Read;
 // #[get("/money")]
 // async fn get_money() -> Result<HttpResponse, Error> {
