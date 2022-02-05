@@ -9,4 +9,3 @@ pub struct StartLevelRequest {
 pub struct StartLevelError {
     pub message: String,
 }
-

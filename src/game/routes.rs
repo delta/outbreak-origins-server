@@ -1,4 +1,3 @@
-
 use crate::auth::extractors::Authenticated;
 use crate::db::types::PgPool;
 use crate::game::response;
