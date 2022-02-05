@@ -9,7 +9,7 @@ pub fn serialize_state(s: &[State], population: f64) -> String {
                 .iter()
                 .enumerate()
                 .map(|(ind, state)| {
-                    if ind == 5 {
+                    if ind == 4 {
                         state.to_string()
                     } else {
                         (state * population).to_string()

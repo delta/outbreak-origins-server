@@ -1,0 +1,77 @@
+{
+  "Internal Lockdown": {
+    "description": "Lockdown Description",
+    "params_delta": [
+      {
+        "name": "Ideal Reproduction",
+        "value": -0.4
+      },
+      {
+        "name": "Compliance Factor",
+        "value": 0.25
+      }
+    ]
+  },
+  "Awareness": {
+    "description": "News",
+    "params_delta": [
+      {
+        "name": "Ideal Reproduction",
+        "value": -0.3
+      },
+      {
+        "name": "Compliance Factor",
+        "value": 0.1
+      }
+    ]
+  },
+  "Hospital Infrastructure": {
+    "description": "Hospital Infrastructure Description",
+    "params_delta": [
+      {
+        "name": "Recovery Rate",
+        "value": -0.01
+      }
+    ]
+  },
+  "Vaccination": {
+    "description": "Cure",
+    "params_delta": [
+      {
+        "name": "infection_rate",
+        "value": -0.04
+      }
+    ]
+  },
+  "Manpower": {
+    "description": "Manpower Description",
+    "params_delta": [
+      {
+        "name": "Recovery Rate",
+        "value": -0.008
+      }
+    ]
+  },
+  "Travel Restriction": {
+    "description": "Travel Restriction Description",
+    "params_delta": [
+      {
+        "name": "Ideal Reproduction",
+        "value": -0.2
+      },
+      {
+        "name": "Compliance Factor",
+        "value": -0.15
+      }
+    ]
+  },
+  "Testing": {
+    "description": "Testing Description",
+    "params_delta": [
+      {
+        "name": "Ideal Reproduction",
+        "value": 0.2
+      }
+    ]
+  }
+}
