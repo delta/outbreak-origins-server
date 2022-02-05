@@ -5,24 +5,12 @@ use actix_web::{get, web, Error, HttpResponse};
 
 #[get("")]
 async fn level_details(
-    web::Query(level): web::Query<response::LevelRequest>,
     user: Authenticated,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, Error> {
-    let level = level.level;
-    web::block(move || {
-        let conn = pool.get()?;
-        controllers::update_current_level(&conn, level, user)
-    })
-    .await
-    .map_err(|e| {
-        eprintln!("{}", e);
-        HttpResponse::InternalServerError().json(response::LevelResponse {
-            message: String::from("Failed"),
-        })
-    })?;
+    let curr_level = controllers::get_current_level(&pool.get().unwrap(), user);
     Ok(HttpResponse::Ok().json(response::LevelResponse {
-        message: String::from("Success"),
+        cur_level: curr_level,
     }))
 }
 

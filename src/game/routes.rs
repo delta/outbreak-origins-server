@@ -1,6 +1,9 @@
-use actix_web::{post, web, Error, HttpResponse};
+use crate::auth::extractors::Authenticated;
+use crate::db::types::PgPool;
+use crate::game::response;
+use crate::levels::controllers::get_current_level;
+use actix_web::{get, web, Error, HttpResponse};
 use std::fs::File;
-
 use std::io::Read;
 // #[get("/money")]
 // async fn get_money() -> Result<HttpResponse, Error> {
@@ -42,14 +45,26 @@ use std::io::Read;
 
 // }
 
-#[post("/start-level")]
-async fn start_level() -> Result<HttpResponse, Error> {
-    let mut file = File::open("src/game/level_start.json").unwrap();
-    let mut json_string = String::new();
-    file.read_to_string(&mut json_string).unwrap();
-    Ok(HttpResponse::Ok()
-        .content_type("application/json")
-        .body(json_string))
+#[get("/start-level")]
+async fn start_level(
+    user: Authenticated,
+    pool: web::Data<PgPool>,
+    level: web::Query<response::StartLevelRequest>,
+) -> Result<HttpResponse, Error> {
+    let cur_level = get_current_level(&pool.get().unwrap(), user);
+    if cur_level < level.level {
+        Ok(HttpResponse::Ok().json(response::StartLevelError {
+            message: format!("Level {} is not yet unlocked", level.level),
+        }))
+    } else {
+        let mut file =
+            File::open(format!("src/game/levels/{}/level_start.json", level.level)).unwrap();
+        let mut json_string = String::new();
+        file.read_to_string(&mut json_string).unwrap();
+        Ok(HttpResponse::Ok()
+            .content_type("application/json")
+            .body(json_string))
+    }
 }
 
 pub fn game_routes(cfg: &mut web::ServiceConfig) {

@@ -12,7 +12,7 @@ pub struct LevelError {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct LevelResponse {
-    pub message: String,
+    pub cur_level: i32,
 }
 
 #[derive(Debug, Clone, Serialize)]
