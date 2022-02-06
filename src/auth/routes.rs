@@ -43,13 +43,13 @@ async fn logout_user(id: Identity) -> Result<HttpResponse, Error> {
 #[get("/checkauth")]
 async fn check_auth(user: extractors::Authenticated) -> Result<HttpResponse, Error> {
     let email = user.0.as_ref().map(|y| y.email.clone());
-    let level = user.0.as_ref().map(|y| y.level.clone());
+    let level = user.0.as_ref().map(|y| y.level);
     Ok(HttpResponse::Ok()
         .status(if user.is_some() {
             StatusCode::OK
         } else {
-            StatusCode::OK
-            // StatusCode::UNAUTHORIZED
+            // StatusCode::OK
+            StatusCode::UNAUTHORIZED
         })
         .json(response::CheckAuthResult {
             status: user.is_some(),
@@ -80,8 +80,8 @@ async fn login_user(
         .status(if is_verified {
             StatusCode::OK
         } else {
-            StatusCode::OK
-            // StatusCode::UNAUTHORIZED
+            // StatusCode::OK
+            StatusCode::UNAUTHORIZED
         })
         .json(response::AuthResult {
             is_verified,

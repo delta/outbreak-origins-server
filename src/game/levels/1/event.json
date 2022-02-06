@@ -1,0 +1,142 @@
+{
+    "Olympics" : {
+        "description": "Olympics Description",
+        "params_delta": [
+            {
+                "name": "Ideal Reproduction",
+                "value": 0.2
+            },
+            {
+                "name": "Compliance Factor",
+                "value": 0.1
+            }
+        ],
+        "reward": 500
+    },
+    "Tennis": {
+        "description": "Tennis Event Description",
+        "params_delta": [
+            {
+                "name": "Ideal Reproduction",
+                "value": 0.2
+            },
+            {
+                "name": "Compliance Factor",
+                "value": 0.1
+            }
+        ],
+        "reward": 500
+    },
+    "Cricket": {
+        "description": "Cricket World Cup Description",
+        "params_delta": [
+            {
+                "name": "Ideal Reproduction",
+                "value": 0.2
+            },
+            {
+                "name": "Compliance Factor",
+                "value": 0.1
+            }
+        ],
+        "reward": 500
+    },
+    "Football": {
+        "description": "Footall World Cup Description",
+        "params_delta": [
+            {
+                "name": "Ideal Reproduction",
+                "value": 0.2
+            },
+            {
+                "name": "Compliance Factor",
+                "value": 0.1
+            }
+        ],
+        "reward": 500
+    },
+    "CentralElection":{
+        "description": "Central Election Description",
+        "params_delta": [
+            {
+                "name": "Ideal Reproduction",
+                "value": 0.2
+            },
+            {
+                "name": "Compliance Factor",
+                "value": 0.1
+            }
+        ],
+        "reward": 0
+    },
+    "LocalBodyElection":{
+        "description": "Local Body Election Description",
+        "params_delta": [
+            {
+                "name": "Ideal Reproduction",
+                "value": 0.2
+            },
+            {
+                "name": "Compliance Factor",
+                "value": 0.1
+            }
+        ],
+        "reward": 0
+    },
+    "MusicConcert":{
+        "description": "Music Concert Description",
+        "params_delta": [
+            {
+                "name": "Ideal Reproduction",
+                "value": 0.2
+            },
+            {
+                "name": "Compliance Factor",
+                "value": 0.1
+            }
+        ],
+        "reward": 1000
+    },
+    "MovieRelease":{
+        "description": "Movie Release Description",
+        "params_delta": [
+            {
+                "name": "Ideal Reproduction",
+                "value": 0.2
+            },
+            {
+                "name": "Compliance Factor",
+                "value": 0.1
+            }
+        ],
+        "reward": 1000
+    },
+    "AnimeConvention":{
+        "description": "Anime Convention Description",
+        "params_delta": [
+            {
+                "name": "Ideal Reproduction",
+                "value": 0.2
+            },
+            {
+                "name": "Compliance Factor",
+                "value": 0.1
+            }
+        ],
+        "reward": 1000
+    },
+    "hanami":{
+        "description": "hanami Description",
+        "params_delta": [
+            {
+                "name": "Ideal Reproduction",
+                "value": 0.2
+            },
+            {
+                "name": "Compliance Factor",
+                "value": 0.1
+            }
+        ],
+        "reward": 1000
+    }
+}

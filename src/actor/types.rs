@@ -41,6 +41,6 @@ pub struct ControlMeasureParams {
 #[derive(Deserialize)]
 pub struct EventParam {
     pub description: String,
-    pub params: Vec<ParamsDelta>,
+    pub params_delta: Vec<ParamsDelta>,
     pub reward: i32,
 }
