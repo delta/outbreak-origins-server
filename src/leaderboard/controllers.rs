@@ -2,7 +2,7 @@ use crate::db::models;
 use crate::db::types::DbError;
 use diesel::prelude::*;
 
-const PAGE_SIZE: u32 = 20;
+const PAGE_SIZE: u32 = 10;
 
 pub fn get_leaderboard(
     conn: &PgConnection,
