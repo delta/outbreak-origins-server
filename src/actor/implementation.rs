@@ -2,8 +2,11 @@ use crate::db::types::PgPool;
 
 use virus_simulator::Simulator;
 
-use crate::actor::events::types::{ControlMeasure, SimulatorResponse, WSRequest, WSResponse};
-use crate::actor::types::ControlMeasureParams;
+use crate::actor::controllers::handle_request;
+use crate::actor::events::types::{
+    ControlMeasure, Event, SimulatorResponse, WSRequest, WSResponse,
+};
+use crate::actor::types::{ControlMeasureParams, EventParam};
 use crate::actor::{types::InitParams, utils::serialize_state};
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
@@ -13,7 +16,6 @@ use actix_web_actors::ws::{Message, ProtocolError};
 use serde_json;
 use std::fs;
 use std::path::Path;
-use crate::actor::controllers::handle_request;
 
 use std::time::{Duration, Instant};
 
@@ -91,6 +93,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                     "Control" => {
                         handle_request::<ControlMeasure, ControlMeasureParams>(request.payload)
                     }
+
+                    "Event" => handle_request::<Event, EventParam>(request.payload),
                     _ => WSResponse::Error("Invalid request sent".to_string()),
                 };
                 ctx.text(res.stringify())

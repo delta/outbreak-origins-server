@@ -28,7 +28,8 @@ enum_str!(
     enum WSResponse {
         // News(NewsEvent),
         Start(SimulatorResponse),
-        Control(SimulatorResponse)
+        Control(SimulatorResponse),
+        Event(SimulatorResponse),
         Error(String),
     }
 );
