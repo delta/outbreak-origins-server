@@ -1,32 +1,27 @@
+use crate::actor::events::types::Start;
 use crate::db::types::PgPool;
 
-use virus_simulator::Simulator;
+use crate::actor::controllers::RequestType;
+use crate::actor::events::types::{ControlMeasure, Event, WSRequest, WSResponse};
 
-use crate::actor::controllers::handle_request;
-use crate::actor::events::types::{
-    ControlMeasure, Event, SimulatorResponse, WSRequest, WSResponse,
-};
-use crate::actor::types::{ControlMeasureParams, EventParam};
-use crate::actor::{types::InitParams, utils::serialize_state};
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
 use actix_web::web;
 pub use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
 use serde_json;
-use std::fs;
-use std::path::Path;
 
 use std::time::{Duration, Instant};
+
+use crate::auth::extractors;
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
-const TOTAL_DAYS: f64 = 700.0;
-
 pub struct Game {
     heartbeat: Instant,
-    _pool: web::Data<PgPool>,
+    pool: web::Data<PgPool>,
+    user: extractors::Authenticated,
 }
 
 impl Actor for Game {
@@ -54,47 +49,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                     payload: "".to_string(),
                 });
 
+                let conn = self.pool.get().expect("Couldn't get DB connection");
+
                 let res = match request.kind.as_str() {
-                    "Start" => {
-                        let path = Path::new("src/init_data.json");
-                        let contents = fs::read_to_string(&path)
-                            .expect("Something went wrong reading the file");
-
-                        let data = serde_json::from_str::<InitParams>(&contents).unwrap();
-
-                        // Instance of Simulator
-                        let sim = Simulator::new(
-                            &data.section_data[0].init_params.susceptible,
-                            &data.section_data[0].init_params.exposed,
-                            &data.section_data[0].init_params.infectious,
-                            &data.section_data[0].init_params.removed,
-                            &data.section_data[0].init_params.current_reproduction_number,
-                            &data.section_data[0].init_params.ideal_reproduction_number,
-                            &data.section_data[0].init_params.compliance_factor,
-                            &data.section_data[0].init_params.recovery_rate,
-                            &data.section_data[0].init_params.infection_rate,
-                        );
-
-                        let f = sim.simulate(0_f64, TOTAL_DAYS);
-
-                        // serilising the data
-                        let payload = serialize_state(&f, data.section_data[0].population);
-                        WSResponse::Start(SimulatorResponse {
-                            payload,
-                            ideal_reproduction_number: data.section_data[0]
-                                .init_params
-                                .ideal_reproduction_number,
-                            compliance_factor: data.section_data[0].init_params.compliance_factor,
-                            recovery_rate: data.section_data[0].init_params.recovery_rate,
-                            infection_rate: data.section_data[0].init_params.infection_rate,
-                        })
-                    }
+                    "Start" => <Start as RequestType>::handle(request.payload, &self.user, &conn),
 
                     "Control" => {
-                        handle_request::<ControlMeasure, ControlMeasureParams>(request.payload)
+                        <ControlMeasure as RequestType>::handle(request.payload, &self.user, &conn)
                     }
 
-                    "Event" => handle_request::<Event, EventParam>(request.payload),
+                    "Event" => <Event as RequestType>::handle(request.payload, &self.user, &conn),
                     _ => WSResponse::Error("Invalid request sent".to_string()),
                 };
                 ctx.text(res.stringify())
@@ -105,10 +69,11 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
 }
 
 impl Game {
-    pub fn new(conn_pool: web::Data<PgPool>) -> Self {
+    pub fn new(conn_pool: web::Data<PgPool>, user: extractors::Authenticated) -> Self {
         Self {
             heartbeat: Instant::now(),
-            _pool: conn_pool,
+            pool: conn_pool,
+            user,
         }
     }
 

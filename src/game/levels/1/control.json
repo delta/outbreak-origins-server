@@ -1,77 +1,138 @@
+/*
+"Measure Name": {
+  "description": "This is description",
+  "1": {
+    "params_delta": [delta_ideal_reproduction, delta_compliance, delta_infection, delta_recovery],
+    "cost": cost
+  },
+  "2": {
+    "params_delta": [delta_ideal_reproduction, delta_compliance, delta_infection, delta_recovery],
+    "cost": cost
+  },
+  "3": {
+    "params_delta": [delta_ideal_reproduction, delta_compliance, delta_infection, delta_recovery],
+    "cost": cost
+  },
+}
+*/
 {
   "Internal Lockdown": {
     "description": "Lockdown Description",
-    "params_delta": [
-      {
-        "name": "Ideal Reproduction",
-        "value": -0.4
+    "levels" :{
+      "1": {
+        "params_delta": [-0.4, 0.25, 0, 0],
+        "cost": 100
       },
-      {
-        "name": "Compliance Factor",
-        "value": 0.25
+      "2": {
+        "params_delta": [-0.4, 0.25, 0, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [-0.4, 0.25, 0, 0],
+        "cost": 100
       }
-    ]
+    }
   },
   "Awareness": {
     "description": "News",
-    "params_delta": [
-      {
-        "name": "Ideal Reproduction",
-        "value": -0.3
+    "levels": {
+      "1": {
+        "params_delta": [-0.3, 0.1, 0, 0],
+        "cost": 100
       },
-      {
-        "name": "Compliance Factor",
-        "value": 0.1
+      "2": {
+        "params_delta": [-0.3, 0.1, 0, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [-0.3, 0.1, 0, 0],
+        "cost": 100
       }
-    ]
+    }
   },
   "Hospital Infrastructure": {
     "description": "Hospital Infrastructure Description",
-    "params_delta": [
-      {
-        "name": "Recovery Rate",
-        "value": -0.01
+    "levels": {
+      "1": {
+        "params_delta": [0, 0, -0.01, 0],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [0, 0, -0.01, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [0, 0, -0.01, 0],
+        "cost": 100
       }
-    ]
+    }
   },
   "Vaccination": {
     "description": "Cure",
-    "params_delta": [
-      {
-        "name": "infection_rate",
-        "value": -0.04
+    "levels": {
+      "1": {
+        "params_delta": [0, 0, 0, -0.04],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [0, 0, 0, -0.04],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [0, 0, 0, -0.04],
+        "cost": 100
       }
-    ]
+    }
   },
   "Manpower": {
     "description": "Manpower Description",
-    "params_delta": [
-      {
-        "name": "Recovery Rate",
-        "value": -0.008
+    "levels": {
+      "1": {
+        "params_delta": [0, 0, -0.008, 0],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [0, 0, -0.008, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [0, 0, -0.008, 0],
+        "cost": 100
       }
-    ]
+    }
   },
   "Travel Restriction": {
     "description": "Travel Restriction Description",
-    "params_delta": [
-      {
-        "name": "Ideal Reproduction",
-        "value": -0.2
+    "levels": {
+      "1": {
+        "params_delta": [-0.2, -0.15, 0, 0],
+        "cost": 100
       },
-      {
-        "name": "Compliance Factor",
-        "value": -0.15
+      "2": {
+        "params_delta": [-0.2, -0.15, 0, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [-0.2, -0.15, 0, 0],
+        "cost": 100
       }
-    ]
+    }
   },
   "Testing": {
     "description": "Testing Description",
-    "params_delta": [
-      {
-        "name": "Ideal Reproduction",
-        "value": 0.2
+    "levels": {
+      "1": {
+        "params_delta": [0.2, 0, 0, 0],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [0.2, 0, 0, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [0.2, 0, 0, 0],
+        "cost": 100
       }
-    ]
+    }
   }
 }

@@ -1,7 +1,7 @@
 use crate::actor::events::utils::enum_str;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-// Event types
 #[derive(Serialize)]
 pub struct NewsResponse {
     pub img: String,
@@ -34,8 +34,8 @@ enum_str!(
     }
 );
 
-#[derive(Deserialize, Clone)]
-pub struct CurParams {
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SimulatorParams {
     pub susceptible: f64,
     pub exposed: f64,
     pub infectious: f64,
@@ -52,7 +52,7 @@ pub struct ControlMeasure {
     pub level: i32,
     pub cur_date: f64,
     pub name: String,
-    pub params: CurParams,
+    pub params: SimulatorParams,
 }
 
 #[derive(Deserialize)]
@@ -60,11 +60,42 @@ pub struct Event {
     pub level: i32,
     pub cur_date: f64,
     pub name: String,
-    pub params: CurParams,
+    pub params: SimulatorParams,
 }
 
 #[derive(Deserialize)]
 pub struct WSRequest {
     pub kind: String,
     pub payload: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Start {
+    pub num_sections: i32,
+    pub section_data: Vec<SectionData>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SectionData {
+    pub population: f64,
+    pub init_params: SimulatorParams,
+}
+
+#[derive(Deserialize)]
+pub struct ControlMeasureLevel {
+    pub params_delta: Vec<f64>,
+    pub cost: u32,
+}
+
+#[derive(Deserialize)]
+pub struct ControlMeasureParams {
+    pub description: String,
+    pub levels: HashMap<String, ControlMeasureLevel>,
+}
+
+#[derive(Deserialize)]
+pub struct EventParams {
+    pub description: String,
+    pub params_delta: Vec<f64>,
+    pub reward: i32,
 }
