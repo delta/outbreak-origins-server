@@ -27,9 +27,11 @@ pub async fn ws_index(
     r: HttpRequest,
     stream: web::Payload,
     pool: web::Data<PgPool>,
+    user: auth::extractors::Authenticated,
 ) -> Result<HttpResponse, Error> {
     println! {"{:?}",r};
-    let res = actor::implementation::ws::start(actor::implementation::Game::new(pool), &r, stream);
+    let res =
+        actor::implementation::ws::start(actor::implementation::Game::new(pool, user), &r, stream);
     println!("{:?}", res);
     res
 }
