@@ -35,7 +35,6 @@ async fn main() -> std::io::Result<()> {
         App::new()
             // set up DB pool to be used with web::Data<Pool> extractor
             .data(pool.clone())
-            .configure(leaderboard::routes::leaderboard_routes)
             .wrap(auth::middleware::CheckAuth {})
             .wrap(IdentityService::new(auth::middleware::cookie_policy()))
             .wrap(common_middleware::cors_config())
@@ -45,6 +44,7 @@ async fn main() -> std::io::Result<()> {
             .configure(auth::routes::auth_routes)
             .configure(levels::routes::level_select_routes)
             .configure(game::routes::game_routes)
+            .configure(leaderboard::routes::leaderboard_routes)
     })
     .bind(&app_url)?
     .run()
