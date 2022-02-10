@@ -42,6 +42,7 @@ table! {
         lastname -> Text,
         score -> Int4,
         money -> Int4,
+        control_measure_level_data -> Jsonb,
     }
 }
 

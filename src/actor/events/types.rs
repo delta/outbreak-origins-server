@@ -49,7 +49,6 @@ pub struct SimulatorParams {
 
 #[derive(Deserialize)]
 pub struct ControlMeasure {
-    pub level: i32,
     pub cur_date: f64,
     pub name: String,
     pub params: SimulatorParams,

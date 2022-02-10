@@ -1,6 +1,8 @@
 use crate::actor::events::types::{
     ControlMeasure, ControlMeasureParams, Event, EventParams, SimulatorResponse, Start, WSResponse,
 };
+use crate::db::models;
+use diesel::prelude::*;
 use diesel::PgConnection;
 
 use crate::actor::utils::serialize_state;
@@ -14,17 +16,8 @@ use virus_simulator::Simulator;
 const POPULATION: f64 = 10000000.0;
 const TOTAL_DAYS: f64 = 700.0;
 
-pub trait RequestType {
-    fn handle(payload: String, user: &extractors::Authenticated, conn: &PgConnection)
-        -> WSResponse;
-}
-
-impl RequestType for Start {
-    fn handle(
-        _payload: String,
-        _user: &extractors::Authenticated,
-        _conn: &PgConnection,
-    ) -> WSResponse {
+impl Start {
+    pub fn handle(_user: &extractors::Authenticated, _conn: &PgConnection) -> WSResponse {
         let path = Path::new("src/init_data.json");
         let contents = fs::read_to_string(&path).expect("Something went wrong reading the file");
 
@@ -55,29 +48,59 @@ impl RequestType for Start {
     }
 }
 
-impl RequestType for ControlMeasure {
-    fn handle(
+impl ControlMeasure {
+    pub fn handle(
         payload: String,
-        _user: &extractors::Authenticated,
-        _conn: &PgConnection,
+        user: &extractors::Authenticated,
+        conn: &PgConnection,
     ) -> WSResponse {
+        use crate::db::schema::users::dsl::*;
         let control_measure = serde_json::from_str::<ControlMeasure>(&payload);
+        let user = user.0.as_ref().unwrap();
+        let user = users
+            .filter(email.eq(user.email.clone()))
+            .first::<models::User>(conn)
+            .optional();
+        let mut user = match user {
+            Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+            Ok(x) => match x {
+                None => return WSResponse::Error("User not found".to_string()),
+                Some(y) => y,
+            },
+        };
 
         let res = match control_measure {
             Err(_) => WSResponse::Error("Couldn't parse request".to_string()),
 
             Ok(control_measure) => {
-                let file = format!("src/game/levels/{}/control.json", control_measure.level);
+                let file = format!("src/game/levels/{}/control.json", user.curlevel);
                 let path = Path::new(&file);
-                let contents =
-                    fs::read_to_string(&path).expect("Something  went wrong reading the file");
+                let contents = match fs::read_to_string(&path) {
+                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+                    Ok(val) => val,
+                };
+
                 let control_measure_data =
                     serde_json::from_str::<HashMap<String, ControlMeasureParams>>(&contents)
                         .unwrap();
 
+                let control_level =
+                    match user.control_measure_level_info.0.get(&control_measure.name) {
+                        Some(x) => x,
+                        None => {
+                            user.control_measure_level_info
+                                .0
+                                .insert(control_measure.name.clone(), 1);
+                            &1
+                        }
+                    };
+
                 match control_measure_data.get(&control_measure.name) {
-                    Some(data) => match data.levels.get(&control_measure.level.to_string()) {
+                    Some(data) => match data.levels.get(&(control_level).to_string()) {
                         Some(level) => {
+                            if level.cost > user.money as u32 {
+                                return WSResponse::Error("Not enough money".to_string());
+                            }
                             let recvd_params = [
                                 control_measure.params.ideal_reproduction_number,
                                 control_measure.params.compliance_factor,
@@ -111,13 +134,23 @@ impl RequestType for ControlMeasure {
                             let f = sim.simulate(0_f64, TOTAL_DAYS - control_measure.cur_date);
                             let payload = serialize_state(&f, POPULATION);
 
-                            WSResponse::Control(SimulatorResponse {
-                                payload,
-                                ideal_reproduction_number: changed_params[0],
-                                compliance_factor: changed_params[1],
-                                recovery_rate: changed_params[2],
-                                infection_rate: changed_params[3],
-                            })
+                            // Update user money after the function has ran successfully
+                            match diesel::update(users.filter(email.eq(user.email)))
+                                .set((
+                                    money.eq(user.money - level.cost as i32),
+                                    control_measure_level_data.eq(user.control_measure_level_info),
+                                ))
+                                .execute(conn)
+                            {
+                                Ok(_) => WSResponse::Control(SimulatorResponse {
+                                    payload,
+                                    ideal_reproduction_number: changed_params[0],
+                                    compliance_factor: changed_params[1],
+                                    recovery_rate: changed_params[2],
+                                    infection_rate: changed_params[3],
+                                }),
+                                Err(_) => WSResponse::Error("Internal Server Error".to_string()),
+                            }
                         }
                         None => WSResponse::Error("Invalid request sent".to_string()),
                     },
@@ -129,8 +162,8 @@ impl RequestType for ControlMeasure {
     }
 }
 
-impl RequestType for Event {
-    fn handle(
+impl Event {
+    pub fn handle(
         payload: String,
         _user: &extractors::Authenticated,
         _conn: &PgConnection,
