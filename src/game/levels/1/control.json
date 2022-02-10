@@ -1,20 +1,3 @@
-/*
-"Measure Name": {
-  "description": "This is description",
-  "1": {
-    "params_delta": [delta_ideal_reproduction, delta_compliance, delta_infection, delta_recovery],
-    "cost": cost
-  },
-  "2": {
-    "params_delta": [delta_ideal_reproduction, delta_compliance, delta_infection, delta_recovery],
-    "cost": cost
-  },
-  "3": {
-    "params_delta": [delta_ideal_reproduction, delta_compliance, delta_infection, delta_recovery],
-    "cost": cost
-  },
-}
-*/
 {
   "Internal Lockdown": {
     "description": "Lockdown Description",
