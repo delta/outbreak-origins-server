@@ -43,6 +43,7 @@ table! {
         score -> Int4,
         money -> Int4,
         is_email_verified -> Bool,
+        control_measure_level_data -> Jsonb,
     }
 }
 

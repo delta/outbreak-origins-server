@@ -1,6 +1,6 @@
+use crate::db::types::PgPool;
 use crate::leaderboard::controllers::get_leaderboard;
 use crate::leaderboard::response::LeaderboardResponse;
-use crate::PgPool;
 use actix_web::{get, web, Error, HttpResponse};
 
 #[get("/{pg_num}")]
