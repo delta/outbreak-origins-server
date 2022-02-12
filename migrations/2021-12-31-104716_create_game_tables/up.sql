@@ -1,30 +1,22 @@
-CREATE TABLE events(
-    id SERIAL PRIMARY KEY NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description VARCHAR(255) NOT NULL,
-    compliance_factor FLOAT NOT NULL,
-    infection_rate FLOAT NOT NULL,
-    ideal_reproduction_number FLOAT NOT NULL
-);
-
 CREATE TABLE regions(
-    id SERIAL PRIMARY KEY NOT NULL,
-    susceptible FLOAT NOT NULL,
-    exposed FLOAT NOT NULL,
-    infected FLOAT NOT NULL,
-    removed FLOAT NOT NULL,
-    reproduction_number FLOAT NOT NULL,
-    control_measure_levels INT,
-    control_measure_isActive BOOLEAN NOT NULL
+    id SERIAL PRIMARY KEY,
+    region_id INT NOT NULL,
+    simulation_params jsonb DEFAULT '{}'::jsonb NOT NULL,
+    active_control_measures jsonb DEFAULT '{}'::jsonb NOT NULL
 );
 
 CREATE TABLE status(
     id SERIAL PRIMARY KEY,
-    level_number INT NOT NULL,
-    current_event INT NOT NULL,
-    postponed INT NOT NULL,
-    regions INT NOT NULL,
-    CONSTRAINT fk_event FOREIGN KEY (current_event) REFERENCES events(id),
-    CONSTRAINT fk_region FOREIGN KEY (regions) REFERENCES regions(id)
+    current_event VARCHAR(255) NOT NULL,
+    postponed INT DEFAULT 0 NOT NULL
 );
 
+ALTER TABLE users
+ADD COLUMN status INT REFERENCES status(id);
+
+-- For many to one relation between regions and status
+CREATE TABLE regions_status (
+    id SERIAL PRIMARY KEY,
+    status_id INT REFERENCES status(id) NOT NULL,
+    region_id INT REFERENCES regions(id) NOT NULL
+);
