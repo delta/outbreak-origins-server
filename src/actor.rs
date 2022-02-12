@@ -1,5 +1,5 @@
 mod controllers;
-mod events;
+pub mod events;
 mod implementation;
 pub mod routes;
 // mod tests;

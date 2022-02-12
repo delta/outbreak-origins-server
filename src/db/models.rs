@@ -1,5 +1,6 @@
 mod events;
 mod jwt;
+pub mod status;
 mod user;
 
 pub use events::Event;
