@@ -1,7 +1,6 @@
-use crate::actor::events::types::Start;
 use crate::db::types::PgPool;
 
-use crate::actor::events::types::{ControlMeasure, Event, WSRequest, WSResponse};
+use crate::actor::events::types::{ControlMeasure, Event, Seed, Start, WSRequest, WSResponse};
 
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
@@ -45,14 +44,15 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                 println!("{}", text);
                 let request = serde_json::from_str::<WSRequest>(&text).unwrap_or(WSRequest {
                     kind: "".to_string(),
+                    region: 0,
                     payload: "".to_string(),
                 });
 
                 let conn = self.pool.get().expect("Couldn't get DB connection");
 
                 let res = match request.kind.as_str() {
-                    "Start" => Start::handle(&self.user, &conn),
-
+                    "Seed" => Seed::handle(&self.user, &conn),
+                    "Start" => Start::handle(request.payload, &self.user, &conn),
                     "Control" => ControlMeasure::handle(request.payload, &self.user, &conn),
                     "Event" => Event::handle(request.payload, &self.user, &conn),
                     _ => WSResponse::Error("Invalid request sent".to_string()),

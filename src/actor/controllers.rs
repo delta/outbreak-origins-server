@@ -1,5 +1,6 @@
 use crate::actor::events::types::{
-    ControlMeasure, ControlMeasureParams, Event, EventParams, SimulatorResponse, Start, WSResponse,
+    ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventParams, Seed,
+    SimulatorParams, SimulatorResponse, Start, StartParams, WSResponse,
 };
 use crate::db::models;
 use diesel::prelude::*;
@@ -16,35 +17,209 @@ use virus_simulator::Simulator;
 const POPULATION: f64 = 10000000.0;
 const TOTAL_DAYS: f64 = 700.0;
 
-impl Start {
-    pub fn handle(_user: &extractors::Authenticated, _conn: &PgConnection) -> WSResponse {
-        let path = Path::new("src/init_data.json");
+impl Seed {
+    pub fn handle(user: &extractors::Authenticated, conn: &PgConnection) -> WSResponse {
+        use crate::db::schema::users::dsl::*;
+        let user = user.0.as_ref().unwrap();
+        let user = users
+            .filter(email.eq(user.email.clone()))
+            .first::<models::User>(conn)
+            .optional();
+
+        let user = match user {
+            Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+            Ok(x) => match x {
+                None => return WSResponse::Error("User not found".to_string()),
+                Some(y) => y,
+            },
+        };
+
+        let file = format!("src/game/levels/{}/seed.json", user.curlevel);
+        let path = Path::new(&file);
         let contents = fs::read_to_string(&path).expect("Something went wrong reading the file");
+        WSResponse::Seed(contents)
+    }
+}
 
-        let data = serde_json::from_str::<Start>(&contents).unwrap();
+impl Start {
+    pub fn handle(
+        payload: String,
+        user: &extractors::Authenticated,
+        conn: &PgConnection,
+    ) -> WSResponse {
+        use crate::db::schema::status::dsl::*;
+        use crate::db::schema::users;
+        let user = user.0.as_ref().unwrap();
+        let user = (users::table)
+            .filter(users::email.eq(user.email.clone()))
+            .first::<models::User>(conn)
+            .optional();
 
-        let sim = Simulator::new(
-            &data.section_data[0].init_params.susceptible,
-            &data.section_data[0].init_params.exposed,
-            &data.section_data[0].init_params.infectious,
-            &data.section_data[0].init_params.removed,
-            &data.section_data[0].init_params.current_reproduction_number,
-            &data.section_data[0].init_params.ideal_reproduction_number,
-            &data.section_data[0].init_params.compliance_factor,
-            &data.section_data[0].init_params.recovery_rate,
-            &data.section_data[0].init_params.infection_rate,
-        );
+        let mut user = match user {
+            Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+            Ok(x) => match x {
+                None => return WSResponse::Error("User not found".to_string()),
+                Some(y) => y,
+            },
+        };
 
-        let f = sim.simulate(0_f64, TOTAL_DAYS);
+        // Get the associated status entry for this user
+        let user_status_id: i32 = match user.status {
+            Some(s_id) => s_id,
+            None => {
+                let s_id = match diesel::insert_into(status)
+                    .default_values()
+                    .get_result::<(i32, String, i32)>(conn)
+                {
+                    Ok(row) => row.0,
+                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+                };
 
-        let payload = serialize_state(&f, data.section_data[0].population);
-        WSResponse::Start(SimulatorResponse {
-            payload,
-            ideal_reproduction_number: data.section_data[0].init_params.ideal_reproduction_number,
-            compliance_factor: data.section_data[0].init_params.compliance_factor,
-            recovery_rate: data.section_data[0].init_params.recovery_rate,
-            infection_rate: data.section_data[0].init_params.infection_rate,
-        })
+                match diesel::update((users::table).filter(users::email.eq(user.email)))
+                    .set(users::status.eq(s_id))
+                    .execute(conn)
+                {
+                    Ok(_) => (),
+                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+                }
+
+                s_id
+            }
+        };
+
+        let region = serde_json::from_str::<Start>(&payload).unwrap().region;
+
+        // Load the created regions for this user
+        use crate::db::schema::regions;
+        use crate::db::schema::regions_status;
+        let existing_regions = match (regions_status::table)
+            .filter(regions_status::status_id.eq(user_status_id))
+            .select(regions_status::region_id)
+            .load::<i32>(conn)
+        {
+            Ok(region_ids) => match (regions::table)
+                .filter(regions::id.eq_any(region_ids))
+                .select((regions::id, regions::region_id))
+                .load::<(i32, i32)>(conn)
+            {
+                Ok(game_region_ids) => game_region_ids,
+                Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+            },
+            Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+        };
+
+        // Get the region id
+        let first_time = false;
+        let user_region_id: i32 = match existing_regions.into_iter().find(|&x| x.1 == region) {
+            Some(r_s_tuple) => r_s_tuple.0,
+            None => {
+                // Initialise the region
+                let new_region_id = match diesel::insert_into(regions::table)
+                    .values(regions::region_id.eq(&region))
+                    .get_result::<(
+                        i32,
+                        i32,
+                        SimulatorParams,
+                        models::status::ActiveControlMeasures,
+                    )>(conn)
+                {
+                    Ok(row) => row.0,
+                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+                };
+
+                // Create an entry in regions_status
+                match diesel::insert_into(regions_status::table)
+                    .values((
+                        regions_status::status_id.eq(user_status_id),
+                        regions_status::region_id.eq(new_region_id),
+                    ))
+                    .execute(conn)
+                {
+                    Ok(_) => (),
+                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+                }
+
+                first_time = true;
+                new_region_id
+            }
+        };
+
+        if first_time {
+            let file = format!("src/game/levels/{}/start.json", user.curlevel);
+            let path = Path::new(&file);
+            let contents =
+                fs::read_to_string(&path).expect("Something went wrong reading the file");
+            let data = serde_json::from_str::<StartParams>(&contents).unwrap();
+
+            match data.params.get(&region.to_string()) {
+                Some(start_params) => {
+                    // Update the status of this region
+                    match diesel::update(regions::table.filter(regions::id.eq(user_region_id)))
+                        .set(regions::simulation_params.eq(start_params))
+                        .execute(conn)
+                    {
+                        Ok(_) => (),
+                        Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+                    }
+
+                    let sim = Simulator::new(
+                        &start_params.susceptible,
+                        &start_params.exposed,
+                        &start_params.infectious,
+                        &start_params.removed,
+                        &start_params.current_reproduction_number,
+                        &start_params.ideal_reproduction_number,
+                        &start_params.compliance_factor,
+                        &start_params.recovery_rate,
+                        &start_params.infection_rate,
+                    );
+                    let f = sim.simulate(0_f64, TOTAL_DAYS);
+
+                    let payload = serialize_state(&f, POPULATION);
+                    WSResponse::Start(SimulatorResponse {
+                        region,
+                        payload,
+                        ideal_reproduction_number: start_params.ideal_reproduction_number,
+                        compliance_factor: start_params.compliance_factor,
+                        recovery_rate: start_params.recovery_rate,
+                        infection_rate: start_params.infection_rate,
+                    })
+                }
+                None => return WSResponse::Error("Internal Server Error".to_string()),
+            }
+        } else {
+            match (regions::table)
+                .filter(regions::id.eq(user_region_id))
+                .select(regions::simulation_params)
+                .first::<SimulatorParams>(conn)
+            {
+                Ok(sim_params) => {
+                    let sim = Simulator::new(
+                        &sim_params.susceptible,
+                        &sim_params.exposed,
+                        &sim_params.infectious,
+                        &sim_params.removed,
+                        &sim_params.current_reproduction_number,
+                        &sim_params.ideal_reproduction_number,
+                        &sim_params.compliance_factor,
+                        &sim_params.recovery_rate,
+                        &sim_params.infection_rate,
+                    );
+                    let f = sim.simulate(0_f64, TOTAL_DAYS);
+
+                    let payload = serialize_state(&f, POPULATION);
+                    WSResponse::Start(SimulatorResponse {
+                        region,
+                        payload,
+                        ideal_reproduction_number: sim_params.ideal_reproduction_number,
+                        compliance_factor: sim_params.compliance_factor,
+                        recovery_rate: sim_params.recovery_rate,
+                        infection_rate: sim_params.infection_rate,
+                    })
+                }
+                Err(_) => WSResponse::Error("Internal Server Error".to_string()),
+            }
+        }
     }
 }
 
@@ -84,23 +259,51 @@ impl ControlMeasure {
                     serde_json::from_str::<HashMap<String, ControlMeasureParams>>(&contents)
                         .unwrap();
 
-                let control_level =
+                let zero_delta: &Vec<f64> = &vec![0_f64; 4];
+                let existing_delta: &Vec<f64> =
                     match user.control_measure_level_info.0.get(&control_measure.name) {
-                        Some(x) => x,
+                        Some(x) => match control_measure_data.get(&control_measure.name) {
+                            Some(data) => match data.levels.get(&x.to_string()) {
+                                Some(level) => &level.params_delta,
+                                None => zero_delta,
+                            },
+                            None => zero_delta,
+                        },
                         None => {
                             user.control_measure_level_info
                                 .0
                                 .insert(control_measure.name.clone(), 1);
-                            &1
+                            zero_delta
                         }
                     };
 
                 match control_measure_data.get(&control_measure.name) {
-                    Some(data) => match data.levels.get(&(control_level).to_string()) {
+                    Some(data) => match data.levels.get(&(control_measure.level).to_string()) {
                         Some(level) => {
-                            if level.cost > user.money as u32 {
+                            if control_measure.action == ControlMeasureAction::Apply
+                                && level.cost > user.money as u32
+                            {
                                 return WSResponse::Error("Not enough money".to_string());
                             }
+                            if control_measure.action == ControlMeasureAction::Remove
+                                && existing_delta == zero_delta
+                            {
+                                return WSResponse::Error(
+                                    "Control Measure wasn't applied".to_string(),
+                                );
+                            }
+
+                            let target_delta: &Vec<f64> = match control_measure.action {
+                                ControlMeasureAction::Apply => &level.params_delta,
+                                ControlMeasureAction::Remove => zero_delta,
+                            };
+
+                            let net_delta: Vec<f64> = existing_delta
+                                .iter()
+                                .zip(target_delta.iter())
+                                .map(|(a, b)| b - a)
+                                .collect();
+
                             let recvd_params = [
                                 control_measure.params.ideal_reproduction_number,
                                 control_measure.params.compliance_factor,
@@ -108,8 +311,7 @@ impl ControlMeasure {
                                 control_measure.params.infection_rate,
                             ];
 
-                            let changed_params: Vec<f64> = level
-                                .params_delta
+                            let changed_params: Vec<f64> = net_delta
                                 .iter()
                                 .zip(recvd_params.iter())
                                 .map(|(&a, &b)| a + b)

@@ -1,6 +1,7 @@
 mod auth;
 mod events;
 mod jwt;
+pub mod status;
 mod user;
 
 pub use auth::{ChangePassword, ResetPasswordEmail, ResetToken, UserVerify};

@@ -1,34 +1,25 @@
 table! {
-    events (id) {
+    regions (id) {
         id -> Int4,
-        name -> Varchar,
-        description -> Varchar,
-        compliance_factor -> Float8,
-        infection_rate -> Float8,
-        ideal_reproduction_number -> Float8,
+        region_id -> Int4,
+        simulation_params -> Jsonb,
+        active_control_measures -> Jsonb,
     }
 }
 
 table! {
-    regions (id) {
+    regions_status (id) {
         id -> Int4,
-        susceptible -> Float8,
-        exposed -> Float8,
-        infected -> Float8,
-        removed -> Float8,
-        reproduction_number -> Float8,
-        control_measure_levels -> Nullable<Int4>,
-        control_measure_isactive -> Bool,
+        status_id -> Int4,
+        region_id -> Int4,
     }
 }
 
 table! {
     status (id) {
         id -> Int4,
-        level_number -> Int4,
-        current_event -> Int4,
+        current_event -> Varchar,
         postponed -> Int4,
-        regions -> Int4,
     }
 }
 
@@ -38,16 +29,22 @@ table! {
         password -> Nullable<Text>,
         curlevel -> Int4,
         email -> Text,
+        status -> Nullable<Int4>,
         firstname -> Text,
         lastname -> Text,
         score -> Int4,
         money -> Int4,
         is_email_verified -> Bool,
-        control_measure_level_data -> Jsonb,
     }
 }
 
-joinable!(status -> events (current_event));
-joinable!(status -> regions (regions));
+joinable!(regions_status -> regions (region_id));
+joinable!(regions_status -> status (status_id));
+joinable!(users -> status (status));
 
-allow_tables_to_appear_in_same_query!(events, regions, status, users,);
+allow_tables_to_appear_in_same_query!(
+    regions,
+    regions_status,
+    status,
+    users,
+);

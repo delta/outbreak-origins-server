@@ -1,4 +1,5 @@
 use crate::actor::events::utils::enum_str;
+use diesel::pg::types::sql_types::Jsonb;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -11,6 +12,7 @@ pub struct NewsResponse {
 
 #[derive(Serialize)]
 pub struct SimulatorResponse {
+    pub region: i32,
     pub payload: String,
     pub ideal_reproduction_number: f64,
     pub compliance_factor: f64,
@@ -27,6 +29,7 @@ pub struct WSPayload {
 enum_str!(
     enum WSResponse {
         // News(NewsEvent),
+        Seed(String),
         Start(SimulatorResponse),
         Control(SimulatorResponse),
         Event(SimulatorResponse),
@@ -34,7 +37,8 @@ enum_str!(
     }
 );
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(AsExpression, FromSqlRow, Serialize, Deserialize, Clone, Debug)]
+#[sql_type = "Jsonb"]
 pub struct SimulatorParams {
     pub susceptible: f64,
     pub exposed: f64,
@@ -48,28 +52,57 @@ pub struct SimulatorParams {
 }
 
 #[derive(Deserialize)]
+pub struct Start {
+    pub region: i32,
+}
+
+#[derive(Deserialize)]
+pub struct StartParams {
+    pub params: HashMap<String, SimulatorParams>,
+}
+
+#[derive(Deserialize, PartialEq)]
+#[serde(tag = "action")]
+pub enum ControlMeasureAction {
+    Apply,
+    Remove,
+}
+
+#[derive(Deserialize)]
 pub struct ControlMeasure {
+    pub level: u32,
     pub cur_date: f64,
     pub name: String,
     pub params: SimulatorParams,
+    pub region: u32,
+    pub action: ControlMeasureAction,
+}
+
+#[derive(Deserialize, PartialEq)]
+#[serde(tag = "action")]
+pub enum EventAction {
+    Accept,
+    Decline,
+    Postpone,
 }
 
 #[derive(Deserialize)]
 pub struct Event {
-    pub level: i32,
     pub cur_date: f64,
     pub name: String,
     pub params: SimulatorParams,
+    pub action: EventAction,
 }
 
 #[derive(Deserialize)]
 pub struct WSRequest {
     pub kind: String,
+    pub region: u32,
     pub payload: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Start {
+pub struct Seed {
     pub num_sections: i32,
     pub section_data: Vec<SectionData>,
 }
