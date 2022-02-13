@@ -2,7 +2,6 @@ use crate::db::models;
 use crate::db::types::DbError;
 use crate::db::types::PgPool;
 use diesel::pg::PgConnection;
-use diesel::prelude::*;
 use dotenv::dotenv;
 use r2d2::Pool;
 pub use r2d2_diesel::ConnectionManager;
@@ -16,15 +15,4 @@ pub fn create_db_pool() -> PgPool {
     Pool::builder()
         .build(manager)
         .expect("Failed to create pool")
-}
-
-#[allow(dead_code)]
-pub fn find_event_by_id(
-    event_id: i32,
-    conn: &PgConnection,
-) -> Result<Option<models::Event>, DbError> {
-    use crate::db::schema::events::dsl::*;
-
-    let event_res = events.find(event_id).first(conn).optional()?;
-    Ok(event_res)
 }

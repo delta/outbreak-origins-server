@@ -34,6 +34,7 @@ enum_str!(
         Control(SimulatorResponse),
         Event(SimulatorResponse),
         Error(String),
+        Ok(String),
     }
 );
 
@@ -81,6 +82,7 @@ pub struct ControlMeasure {
 #[derive(Deserialize, PartialEq)]
 #[serde(tag = "action")]
 pub enum EventAction {
+    Request,
     Accept,
     Decline,
     Postpone,
@@ -89,7 +91,7 @@ pub enum EventAction {
 #[derive(Deserialize)]
 pub struct Event {
     pub cur_date: f64,
-    pub name: String,
+    pub id: i32,
     pub params: SimulatorParams,
     pub action: EventAction,
 }
@@ -125,9 +127,11 @@ pub struct ControlMeasureParams {
     pub levels: HashMap<String, ControlMeasureLevel>,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct EventParams {
+    pub name: String,
     pub description: String,
     pub params_delta: Vec<f64>,
+    pub region: i32,
     pub reward: i32,
 }
