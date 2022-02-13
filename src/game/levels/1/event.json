@@ -6,54 +6,67 @@
 }
 */
 {
-    "Olympics" : {
+    "1" : {
+        "name": "Olympics",
         "description": "Olympics Description",
         "params_delta": [0.2, 0.1, 0, 0],
+        "region": 1,
         "reward": 500
     },
-    "Tennis": {
+    "2": {
+        "name": "Tennis",
         "description": "Tennis Event Description",
         "params_delta": [0.2, 0.1, 0, 0],
+        "region": 2,
         "reward": 500
     },
-    "Cricket": {
+    "3": {
+        "name": "Cricket",
         "description": "Cricket World Cup Description",
         "params_delta": [0.2, 0.1, 0, 0],
+        "region": 3,
         "reward": 500
     },
-    "Football": {
+    "4": {
+        "name": "Football",
         "description": "Footall World Cup Description",
         "params_delta": [0.2, 0.1, 0, 0],
+        "region": 1,
         "reward": 500
     },
-    "CentralElection":{
-        "description": "Central Election Description",
-        "params_delta": [0.2, 0.1, 0, 0],
-        "reward": 0
-    },
-    "LocalBodyElection":{
+    "5":{
+        "name": "Election",
         "description": "Local Body Election Description",
         "params_delta": [0.2, 0.1, 0, 0],
+        "region": 2,
         "reward": 0
     },
-    "MusicConcert":{
+    "6":{
+        "name": "Music Concert",
         "description": "Music Concert Description",
         "params_delta": [0.2, 0.1, 0, 0],
+        "region": 3,
         "reward": 1000
     },
-    "MovieRelease":{
+    "7":{
+        "name": "Movie Release",
         "description": "Movie Release Description",
         "params_delta": [0.2, 0.1, 0, 0],
+        "region": 1,
         "reward": 1000
     },
-    "AnimeConvention":{
+    "8":{
+        "name": "Anime Convention",
         "description": "Anime Convention Description",
         "params_delta": [0.2, 0.1, 0, 0],
+        "region": 2,
         "reward": 1000
     },
-    "hanami":{
+    "9":{
+        "name": "Hanami",
         "description": "hanami Description",
         "params_delta": [0.2, 0.1, 0, 0],
+        "region": 3,
         "reward": 1000
     }
 }

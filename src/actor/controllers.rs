@@ -1,6 +1,6 @@
 use crate::actor::events::types::{
-    ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventParams, Seed,
-    SimulatorParams, SimulatorResponse, Start, StartParams, WSResponse,
+    ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventAction, EventParams,
+    Seed, SimulatorParams, SimulatorResponse, Start, StartParams, WSResponse,
 };
 use crate::db::models;
 use diesel::prelude::*;
@@ -16,6 +16,7 @@ use virus_simulator::Simulator;
 
 const POPULATION: f64 = 10000000.0;
 const TOTAL_DAYS: f64 = 700.0;
+const EVENT_POSTPONE_PENALTY: i32 = 100;
 
 impl Seed {
     pub fn handle(user: &extractors::Authenticated, conn: &PgConnection) -> WSResponse {
@@ -367,68 +368,202 @@ impl ControlMeasure {
 impl Event {
     pub fn handle(
         payload: String,
-        _user: &extractors::Authenticated,
-        _conn: &PgConnection,
+        user: &extractors::Authenticated,
+        conn: &PgConnection,
     ) -> WSResponse {
+        use crate::db::schema::users::dsl::*;
+        let control_measure = serde_json::from_str::<ControlMeasure>(&payload);
+        let user = user.0.as_ref().unwrap();
+        let user = users
+            .filter(email.eq(user.email.clone()))
+            .first::<models::User>(conn)
+            .optional();
+        let mut user = match user {
+            Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+            Ok(x) => match x {
+                None => return WSResponse::Error("User not found".to_string()),
+                Some(y) => y,
+            },
+        };
+
+        let user_status_id = match user.status {
+            Some(x) => x,
+            None => return WSResponse::Error("Internal Server Error".to_string()),
+        };
+
         let event = serde_json::from_str::<Event>(&payload);
 
-        let res = match event {
-            Err(_) => WSResponse::Error("Couldn't parse request".to_string()),
+        match event {
+            Err(_) => return WSResponse::Error("Couldn't parse request".to_string()),
 
             Ok(event) => {
-                let file = format!("src/game/levels/{}/event.json", event.level);
+                let file = format!("src/game/levels/{}/event.json", user.curlevel);
                 let path = Path::new(&file);
                 let contents =
                     fs::read_to_string(&path).expect("Something  went wrong reading the file");
                 let event_data =
                     serde_json::from_str::<HashMap<String, EventParams>>(&contents).unwrap();
-                match event_data.get(&event.name) {
-                    Some(data) => {
-                        let recvd_params = [
-                            event.params.ideal_reproduction_number,
-                            event.params.compliance_factor,
-                            event.params.recovery_rate,
-                            event.params.infection_rate,
-                        ];
 
-                        let changed_params: Vec<f64> = data
-                            .params_delta
-                            .iter()
-                            .zip(recvd_params.iter())
-                            .map(|(&a, &b)| a + b)
-                            .collect();
+                use crate::db::schema::status::dsl::*;
 
-                        let susceptible = event.params.susceptible / POPULATION;
-                        let exposed = event.params.exposed / POPULATION;
-                        let infectious = event.params.infectious / POPULATION;
-                        let removed = event.params.removed / POPULATION;
-                        let sim = Simulator::new(
-                            &susceptible,
-                            &exposed,
-                            &infectious,
-                            &removed,
-                            &event.params.current_reproduction_number,
-                            &changed_params[0],
-                            &changed_params[1],
-                            &changed_params[2],
-                            &changed_params[3],
-                        );
+                match event.action {
+                    EventAction::Request => match event_data.get(&event.id.to_string()) {
+                        Some(data) => {
+                            match status
+                                .filter(id.eq(user_status_id))
+                                .first::<(i32, String, i32)>(conn)
+                            {
+                                Err(_) => {
+                                    return WSResponse::Error("Internal Server Error".to_string())
+                                }
+                                Ok(user_status) => {
+                                    match diesel::update(status)
+                                        .filter(id.eq(user_status_id))
+                                        .set((current_event.eq(data.name), postponed.eq(0)))
+                                        .execute(conn)
+                                    {
+                                        Err(_) => {
+                                            return WSResponse::Error(
+                                                "Internal Server Error".to_string(),
+                                            )
+                                        }
+                                        Ok(_) => (),
+                                    }
+                                }
+                            }
+                            return WSResponse::Seed(
+                                serde_json::to_string::<EventParams>(&data).unwrap(),
+                            );
+                        }
+                        None => return WSResponse::Error("Couldn't read the file".to_string()),
+                    },
+                    EventAction::Accept => match event_data.get(&event.id.to_string()) {
+                        Some(data) => {
+                            let reward =
+                                match status
+                                    .filter(id.eq(user_status_id))
+                                    .first::<(i32, String, i32)>(conn)
+                                {
+                                    Err(_) => {
+                                        return WSResponse::Error(
+                                            "Internal Server Error".to_string(),
+                                        )
+                                    }
+                                    Ok(user_status) => {
+                                        if user_status.1 != data.name {
+                                            return WSResponse::Error(
+                                                "Cannot Accept event which wasn't requested"
+                                                    .to_string(),
+                                            );
+                                        }
+                                        data.reward - user_status.2 * EVENT_POSTPONE_PENALTY
+                                    }
+                                };
 
-                        let f = sim.simulate(0_f64, TOTAL_DAYS - event.cur_date);
-                        let payload = serialize_state(&f, POPULATION);
+                            match diesel::update(users.filter(email.eq(user.email)))
+                                .set(money.eq(money + reward))
+                                .execute(conn)
+                            {
+                                Err(_) => {
+                                    return WSResponse::Error("Internal Server Error".to_string())
+                                }
+                                Ok(_) => (),
+                            }
 
-                        WSResponse::Event(SimulatorResponse {
-                            payload,
-                            ideal_reproduction_number: changed_params[0],
-                            compliance_factor: changed_params[1],
-                            recovery_rate: changed_params[2],
-                            infection_rate: changed_params[3],
-                        })
+                            let recvd_params = [
+                                event.params.ideal_reproduction_number,
+                                event.params.compliance_factor,
+                                event.params.recovery_rate,
+                                event.params.infection_rate,
+                            ];
+
+                            let changed_params: Vec<f64> = data
+                                .params_delta
+                                .iter()
+                                .zip(recvd_params.iter())
+                                .map(|(&a, &b)| a + b)
+                                .collect();
+
+                            let susceptible = event.params.susceptible / POPULATION;
+                            let exposed = event.params.exposed / POPULATION;
+                            let infectious = event.params.infectious / POPULATION;
+                            let removed = event.params.removed / POPULATION;
+                            let sim = Simulator::new(
+                                &susceptible,
+                                &exposed,
+                                &infectious,
+                                &removed,
+                                &event.params.current_reproduction_number,
+                                &changed_params[0],
+                                &changed_params[1],
+                                &changed_params[2],
+                                &changed_params[3],
+                            );
+
+                            let f = sim.simulate(0_f64, TOTAL_DAYS - event.cur_date);
+                            let payload = serialize_state(&f, POPULATION);
+
+                            return WSResponse::Event(SimulatorResponse {
+                                region: data.region,
+                                payload,
+                                ideal_reproduction_number: changed_params[0],
+                                compliance_factor: changed_params[1],
+                                recovery_rate: changed_params[2],
+                                infection_rate: changed_params[3],
+                            });
+                        }
+                        None => return WSResponse::Error("Invalid request sent".to_string()),
+                    },
+                    EventAction::Decline => {
+                        match status
+                            .filter(id.eq(user_status_id))
+                            .first::<(i32, String, i32)>(conn)
+                        {
+                            Err(_) => {
+                                return WSResponse::Error("Internal Server Error".to_string())
+                            }
+                            Ok(user_status) => {
+                                match diesel::update(status)
+                                    .filter(id.eq(user_status_id))
+                                    .set((current_event.eq("None"), postponed.eq(0)))
+                                    .execute(conn)
+                                {
+                                    Err(_) => {
+                                        return WSResponse::Error(
+                                            "Internal Server Error".to_string(),
+                                        )
+                                    }
+                                    Ok(_) => return WSResponse::Ok("Declined".to_string()),
+                                }
+                            }
+                        }
                     }
-                    None => WSResponse::Error("Invalid request sent".to_string()),
+                    EventAction::Postpone => {
+                        match status
+                            .filter(id.eq(user_status_id))
+                            .first::<(i32, String, i32)>(conn)
+                        {
+                            Err(_) => {
+                                return WSResponse::Error("Internal Server Error".to_string())
+                            }
+                            Ok(user_status) => {
+                                match diesel::update(status)
+                                    .filter(id.eq(user_status_id))
+                                    .set(postponed.eq(postponed + 1))
+                                    .execute(conn)
+                                {
+                                    Err(_) => {
+                                        return WSResponse::Error(
+                                            "Internal Server Error".to_string(),
+                                        )
+                                    }
+                                    Ok(_) => return WSResponse::Ok("Postponed".to_string()),
+                                }
+                            }
+                        }
+                    }
                 }
             }
         };
-        res
     }
 }
