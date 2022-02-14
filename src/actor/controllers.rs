@@ -9,6 +9,7 @@ use diesel::PgConnection;
 use crate::actor::utils::serialize_state;
 use crate::auth::extractors;
 
+use crate::db::types::DbError;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -19,26 +20,26 @@ const TOTAL_DAYS: f64 = 700.0;
 const EVENT_POSTPONE_PENALTY: i32 = 100;
 
 impl Seed {
-    pub fn handle(user: &extractors::Authenticated, conn: &PgConnection) -> WSResponse {
+    pub fn handle(
+        user: &extractors::Authenticated,
+        conn: &PgConnection,
+    ) -> Result<WSResponse, DbError> {
         use crate::db::schema::users::dsl::*;
         let user = user.0.as_ref().unwrap();
         let user = users
             .filter(email.eq(user.email.clone()))
             .first::<models::User>(conn)
-            .optional();
+            .optional()?;
 
         let user = match user {
-            Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-            Ok(x) => match x {
-                None => return WSResponse::Error("User not found".to_string()),
-                Some(y) => y,
-            },
+            None => return Ok(WSResponse::Error("User not found".to_string())),
+            Some(y) => y,
         };
 
         let file = format!("src/game/levels/{}/seed.json", user.curlevel);
         let path = Path::new(&file);
         let contents = fs::read_to_string(&path).expect("Something went wrong reading the file");
-        WSResponse::Seed(contents)
+        Ok(WSResponse::Seed(contents))
     }
 }
 
@@ -47,43 +48,32 @@ impl Start {
         payload: String,
         user: &extractors::Authenticated,
         conn: &PgConnection,
-    ) -> WSResponse {
+    ) -> Result<WSResponse, DbError> {
         use crate::db::schema::status::dsl::*;
         use crate::db::schema::users;
         let user = user.0.as_ref().unwrap();
         let user = (users::table)
             .filter(users::email.eq(user.email.clone()))
             .first::<models::User>(conn)
-            .optional();
+            .optional()?;
 
-        let mut user = match user {
-            Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-            Ok(x) => match x {
-                None => return WSResponse::Error("User not found".to_string()),
-                Some(y) => y,
-            },
+        let user = match user {
+            None => return Ok(WSResponse::Error("User not found".to_string())),
+            Some(y) => y,
         };
 
         // Get the associated status entry for this user
         let user_status_id: i32 = match user.status {
             Some(s_id) => s_id,
             None => {
-                let s_id = match diesel::insert_into(status)
+                let s_id = diesel::insert_into(status)
                     .default_values()
-                    .get_result::<(i32, String, i32)>(conn)
-                {
-                    Ok(row) => row.0,
-                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-                };
+                    .get_result::<(i32, String, i32)>(conn)?
+                    .0;
 
-                match diesel::update((users::table).filter(users::email.eq(user.email)))
+                diesel::update((users::table).filter(users::email.eq(user.email)))
                     .set(users::status.eq(s_id))
-                    .execute(conn)
-                {
-                    Ok(_) => (),
-                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-                }
-
+                    .execute(conn)?;
                 s_id
             }
         };
@@ -93,21 +83,14 @@ impl Start {
         // Load the created regions for this user
         use crate::db::schema::regions;
         use crate::db::schema::regions_status;
-        let existing_regions = match (regions_status::table)
+        let region_ids = (regions_status::table)
             .filter(regions_status::status_id.eq(user_status_id))
             .select(regions_status::region_id)
-            .load::<i32>(conn)
-        {
-            Ok(region_ids) => match (regions::table)
-                .filter(regions::id.eq_any(region_ids))
-                .select((regions::id, regions::region_id))
-                .load::<(i32, i32)>(conn)
-            {
-                Ok(game_region_ids) => game_region_ids,
-                Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-            },
-            Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-        };
+            .load::<i32>(conn)?;
+        let existing_regions = (regions::table)
+            .filter(regions::id.eq_any(region_ids))
+            .select((regions::id, regions::region_id))
+            .load::<(i32, i32)>(conn)?;
 
         // Get the region id
         let mut first_time = false;
@@ -115,30 +98,23 @@ impl Start {
             Some(r_s_tuple) => r_s_tuple.0,
             None => {
                 // Initialise the region
-                let new_region_id = match diesel::insert_into(regions::table)
+                let new_region_id = diesel::insert_into(regions::table)
                     .values(regions::region_id.eq(&region))
                     .get_result::<(
                         i32,
                         i32,
                         SimulatorParams,
                         models::status::ActiveControlMeasures,
-                    )>(conn)
-                {
-                    Ok(row) => row.0,
-                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-                };
+                    )>(conn)?
+                    .0;
 
                 // Create an entry in regions_status
-                match diesel::insert_into(regions_status::table)
+                diesel::insert_into(regions_status::table)
                     .values((
                         regions_status::status_id.eq(user_status_id),
                         regions_status::region_id.eq(new_region_id),
                     ))
-                    .execute(conn)
-                {
-                    Ok(_) => (),
-                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-                }
+                    .execute(conn)?;
 
                 first_time = true;
                 new_region_id
@@ -155,13 +131,9 @@ impl Start {
             match data.params.get(&region.to_string()) {
                 Some(start_params) => {
                     // Update the status of this region
-                    match diesel::update(regions::table.filter(regions::id.eq(user_region_id)))
+                    diesel::update(regions::table.filter(regions::id.eq(user_region_id)))
                         .set(regions::simulation_params.eq(start_params))
-                        .execute(conn)
-                    {
-                        Ok(_) => (),
-                        Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-                    }
+                        .execute(conn)?;
 
                     let sim = Simulator::new(
                         &start_params.susceptible,
@@ -177,49 +149,44 @@ impl Start {
                     let f = sim.simulate(0_f64, TOTAL_DAYS);
 
                     let payload = serialize_state(&f, POPULATION);
-                    WSResponse::Start(SimulatorResponse {
+                    Ok(WSResponse::Start(SimulatorResponse {
                         region,
                         payload,
                         ideal_reproduction_number: start_params.ideal_reproduction_number,
                         compliance_factor: start_params.compliance_factor,
                         recovery_rate: start_params.recovery_rate,
                         infection_rate: start_params.infection_rate,
-                    })
+                    }))
                 }
-                None => return WSResponse::Error("Internal Server Error".to_string()),
+                None => Ok(WSResponse::Error("Internal Server Error".to_string())),
             }
         } else {
-            match (regions::table)
+            let sim_params = (regions::table)
                 .filter(regions::id.eq(user_region_id))
                 .select(regions::simulation_params)
-                .first::<SimulatorParams>(conn)
-            {
-                Ok(sim_params) => {
-                    let sim = Simulator::new(
-                        &sim_params.susceptible,
-                        &sim_params.exposed,
-                        &sim_params.infectious,
-                        &sim_params.removed,
-                        &sim_params.current_reproduction_number,
-                        &sim_params.ideal_reproduction_number,
-                        &sim_params.compliance_factor,
-                        &sim_params.recovery_rate,
-                        &sim_params.infection_rate,
-                    );
-                    let f = sim.simulate(0_f64, TOTAL_DAYS);
+                .first::<SimulatorParams>(conn)?;
+            let sim = Simulator::new(
+                &sim_params.susceptible,
+                &sim_params.exposed,
+                &sim_params.infectious,
+                &sim_params.removed,
+                &sim_params.current_reproduction_number,
+                &sim_params.ideal_reproduction_number,
+                &sim_params.compliance_factor,
+                &sim_params.recovery_rate,
+                &sim_params.infection_rate,
+            );
+            let f = sim.simulate(0_f64, TOTAL_DAYS);
 
-                    let payload = serialize_state(&f, POPULATION);
-                    WSResponse::Start(SimulatorResponse {
-                        region,
-                        payload,
-                        ideal_reproduction_number: sim_params.ideal_reproduction_number,
-                        compliance_factor: sim_params.compliance_factor,
-                        recovery_rate: sim_params.recovery_rate,
-                        infection_rate: sim_params.infection_rate,
-                    })
-                }
-                Err(_) => WSResponse::Error("Internal Server Error".to_string()),
-            }
+            let payload = serialize_state(&f, POPULATION);
+            Ok(WSResponse::Start(SimulatorResponse {
+                region,
+                payload,
+                ideal_reproduction_number: sim_params.ideal_reproduction_number,
+                compliance_factor: sim_params.compliance_factor,
+                recovery_rate: sim_params.recovery_rate,
+                infection_rate: sim_params.infection_rate,
+            }))
         }
     }
 }
@@ -229,7 +196,7 @@ impl ControlMeasure {
         payload: String,
         user: &extractors::Authenticated,
         conn: &PgConnection,
-    ) -> WSResponse {
+    ) -> Result<WSResponse, DbError> {
         use crate::db::schema::{regions, regions_status, status, users};
 
         // User input wrapped in a Result
@@ -238,26 +205,23 @@ impl ControlMeasure {
         let user = (users::table)
             .filter(users::email.eq(user.email.clone()))
             .first::<models::User>(conn)
-            .optional();
+            .optional()?;
 
         // Check if user present
         let user = match user {
-            Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-            Ok(x) => match x {
-                None => return WSResponse::Error("User not found".to_string()),
-                Some(y) => y,
-            },
+            None => return Ok(WSResponse::Error("User not found".to_string())),
+            Some(y) => y,
         };
 
         let res = match control_measure_request_result {
-            Err(_) => WSResponse::Error("Couldn't parse request".to_string()),
+            Err(_) => Ok(WSResponse::Error("Couldn't parse request".to_string())),
             // If valid request
             Ok(control_measure_request) => {
                 // Reads data from control measure file
                 let file = format!("src/game/levels/{}/control.json", user.curlevel);
                 let path = Path::new(&file);
                 let contents = match fs::read_to_string(&path) {
-                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
+                    Err(_) => return Ok(WSResponse::Error("Internal Server Error".to_string())),
                     Ok(val) => val,
                 };
 
@@ -273,89 +237,67 @@ impl ControlMeasure {
                 let status_id = match user.status {
                     Some(status_id) => status_id,
                     None => {
-                        let s_id = match diesel::insert_into(status::table)
+                        let s_id = diesel::insert_into(status::table)
                             .default_values()
-                            .get_result::<(i32, String, i32)>(conn)
-                        {
-                            Ok(r) => r.0,
-                            Err(_) => {
-                                return WSResponse::Error("Internal Server Error".to_string())
-                            }
-                        };
-                        if diesel::update(
-                            (users::table).filter(users::email.eq(user.email.clone())),
-                        )
-                        .set(users::status.eq(s_id))
-                        .execute(conn)
-                        .is_err()
-                        {
-                            return WSResponse::Error("Internal Server Error".to_string());
-                        }
+                            .get_result::<(i32, String, i32)>(conn)?
+                            .0;
+                        diesel::update((users::table).filter(users::email.eq(user.email.clone())))
+                            .set(users::status.eq(s_id))
+                            .execute(conn)?;
                         s_id
                     }
                 };
 
-                let (mut active_control_measures, existing_delta) = match (regions::table)
+                let active_control_measure = (regions::table)
                     .inner_join(regions_status::table)
                     .filter(regions_status::status_id.eq(status_id))
                     .filter(regions::region_id.eq(control_measure_request.region as i32))
                     .select(regions::active_control_measures)
-                    .load::<models::status::ActiveControlMeasures>(conn)
-                {
-                    Ok(x) => {
-                        if x.is_empty() {
-                            let regions_row = match diesel::insert_into(regions::table)
-                                .values(
-                                    regions::region_id.eq(control_measure_request.region as i32),
-                                )
-                                .get_result::<(
-                                    i32,
-                                    i32,
-                                    SimulatorParams,
-                                    models::status::ActiveControlMeasures,
-                                )>(conn)
-                            {
-                                Ok(val) => val,
-                                Err(_) => {
-                                    return WSResponse::Error("Internal Server Error".to_string())
-                                }
-                            };
+                    .load::<models::status::ActiveControlMeasures>(conn)?;
 
-                            if diesel::insert_into(regions_status::table)
-                                .values((
-                                    regions_status::status_id.eq(status_id),
-                                    regions_status::region_id.eq(regions_row.0),
-                                ))
-                                .execute(conn)
-                                .is_err()
+                let (mut active_control_measures, existing_delta) = if active_control_measure
+                    .is_empty()
+                {
+                    let regions_row = diesel::insert_into(regions::table)
+                        .values(regions::region_id.eq(control_measure_request.region as i32))
+                        .get_result::<(
+                            i32,
+                            i32,
+                            SimulatorParams,
+                            models::status::ActiveControlMeasures,
+                        )>(conn)?;
+
+                    diesel::insert_into(regions_status::table)
+                        .values((
+                            regions_status::status_id.eq(status_id),
+                            regions_status::region_id.eq(regions_row.0),
+                        ))
+                        .execute(conn)?;
+                    (regions_row.3 .0, zero_delta)
+                } else {
+                    match active_control_measure[0]
+                        .0
+                        .get(&control_measure_request.name)
+                    {
+                        Some(val) => {
+                            match control_measure_data
+                                .get(&control_measure_request.name)
+                                .unwrap()
+                                .levels
+                                .get(val)
                             {
-                                return WSResponse::Error("Internal Server Error".to_string());
-                            }
-                            (regions_row.3 .0, zero_delta)
-                        } else {
-                            match x[0].0.get(&control_measure_request.name) {
-                                Some(val) => {
-                                    match control_measure_data
-                                        .get(&control_measure_request.name)
-                                        .unwrap()
-                                        .levels
-                                        .get(val)
-                                    {
-                                        Some(y) => (x[0].0.clone(), &y.params_delta),
-                                        // Should never happen since the user can only have
-                                        // a control measure if present in our file
-                                        None => {
-                                            return WSResponse::Error(
-                                                "Internal Server Error".to_string(),
-                                            )
-                                        }
-                                    }
+                                Some(y) => (active_control_measure[0].0.clone(), &y.params_delta),
+                                // Should never happen since the user can only have
+                                // a control measure if present in our file
+                                None => {
+                                    return Ok(WSResponse::Error(
+                                        "Internal Server Error".to_string(),
+                                    ))
                                 }
-                                None => (x[0].0.clone(), zero_delta),
                             }
                         }
+                        None => (active_control_measure[0].0.clone(), zero_delta),
                     }
-                    Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
                 };
 
                 match control_measure_data.get(&control_measure_request.name) {
@@ -367,14 +309,14 @@ impl ControlMeasure {
                             if control_measure_request.action == ControlMeasureAction::Apply
                                 && control_measure_level_info.cost > user.money as u32
                             {
-                                return WSResponse::Error("Not enough money".to_string());
+                                return Ok(WSResponse::Error("Not enough money".to_string()));
                             }
                             if control_measure_request.action == ControlMeasureAction::Remove
                                 && existing_delta == zero_delta
                             {
-                                return WSResponse::Error(
+                                return Ok(WSResponse::Error(
                                     "Control measure was not applied".to_string(),
-                                );
+                                ));
                             }
 
                             let target_delta: &Vec<f64> = match control_measure_request.action {
@@ -392,7 +334,7 @@ impl ControlMeasure {
                                     &control_measure_level_info.params_delta
                                 }
                                 ControlMeasureAction::Remove => {
-                                    // active_control_measures.0.
+                                    active_control_measures.remove(&control_measure_request.name);
                                     zero_delta
                                 }
                             };
@@ -437,7 +379,7 @@ impl ControlMeasure {
                                 sim.simulate(0_f64, TOTAL_DAYS - control_measure_request.cur_date);
                             let payload = serialize_state(&f, POPULATION);
 
-                            let res = conn.transaction::<_, diesel::result::Error, _>(|| {
+                            conn.transaction::<_, diesel::result::Error, _>(|| {
                                 diesel::update(regions::table)
                                     .filter(
                                         regions::id.eq_any(
@@ -481,22 +423,19 @@ impl ControlMeasure {
                                         )
                                         .execute(conn)?;
                                 Ok(())
-                            });
-                            match res {
-                                Ok(_) => WSResponse::Control(SimulatorResponse {
-                                    region: control_measure_request.region as i32,
-                                    payload,
-                                    ideal_reproduction_number: changed_params[0],
-                                    compliance_factor: changed_params[1],
-                                    recovery_rate: changed_params[2],
-                                    infection_rate: changed_params[3],
-                                }),
-                                Err(_) => WSResponse::Error("Internal Server Error".to_string()),
-                            }
+                            })?;
+                            Ok(WSResponse::Control(SimulatorResponse {
+                                region: control_measure_request.region as i32,
+                                payload,
+                                ideal_reproduction_number: changed_params[0],
+                                compliance_factor: changed_params[1],
+                                recovery_rate: changed_params[2],
+                                infection_rate: changed_params[3],
+                            }))
                         }
-                        None => WSResponse::Error("Level not found".to_string()),
+                        None => Ok(WSResponse::Error("Level not found".to_string())),
                     },
-                    None => WSResponse::Error("No control measure found".to_string()),
+                    None => Ok(WSResponse::Error("No control measure found".to_string())),
                 }
             }
         };
@@ -509,31 +448,27 @@ impl Event {
         payload: String,
         user: &extractors::Authenticated,
         conn: &PgConnection,
-    ) -> WSResponse {
+    ) -> Result<WSResponse, DbError> {
         use crate::db::schema::users::dsl::*;
-        let control_measure = serde_json::from_str::<ControlMeasure>(&payload);
         let user = user.0.as_ref().unwrap();
         let user = users
             .filter(email.eq(user.email.clone()))
             .first::<models::User>(conn)
-            .optional();
-        let mut user = match user {
-            Err(_) => return WSResponse::Error("Internal Server Error".to_string()),
-            Ok(x) => match x {
-                None => return WSResponse::Error("User not found".to_string()),
-                Some(y) => y,
-            },
+            .optional()?;
+        let user = match user {
+            None => return Ok(WSResponse::Error("User not found".to_string())),
+            Some(y) => y,
         };
 
         let user_status_id = match user.status {
             Some(x) => x,
-            None => return WSResponse::Error("Internal Server Error".to_string()),
+            None => return Ok(WSResponse::Error("Internal Server Error".to_string())),
         };
 
         let event = serde_json::from_str::<Event>(&payload);
 
         match event {
-            Err(_) => return WSResponse::Error("Couldn't parse request".to_string()),
+            Err(_) => Ok(WSResponse::Error("Couldn't parse request".to_string())),
 
             Ok(event) => {
                 let file = format!("src/game/levels/{}/event.json", user.curlevel);
@@ -548,66 +483,34 @@ impl Event {
                 match event.action {
                     EventAction::Request => match event_data.get(&event.id.to_string()) {
                         Some(data) => {
-                            match status
+                            diesel::update(status)
                                 .filter(id.eq(user_status_id))
-                                .first::<(i32, String, i32)>(conn)
-                            {
-                                Err(_) => {
-                                    return WSResponse::Error("Internal Server Error".to_string())
-                                }
-                                Ok(user_status) => {
-                                    match diesel::update(status)
-                                        .filter(id.eq(user_status_id))
-                                        .set((current_event.eq(data.name), postponed.eq(0)))
-                                        .execute(conn)
-                                    {
-                                        Err(_) => {
-                                            return WSResponse::Error(
-                                                "Internal Server Error".to_string(),
-                                            )
-                                        }
-                                        Ok(_) => (),
-                                    }
-                                }
-                            }
-                            return WSResponse::Seed(
-                                serde_json::to_string::<EventParams>(&data).unwrap(),
-                            );
+                                .set((current_event.eq(data.name.clone()), postponed.eq(0)))
+                                .execute(conn)?;
+
+                            Ok(WSResponse::Seed(
+                                serde_json::to_string::<EventParams>(data).unwrap(),
+                            ))
                         }
-                        None => return WSResponse::Error("Couldn't read the file".to_string()),
+                        None => Ok(WSResponse::Error("Couldn't read the file".to_string())),
                     },
                     EventAction::Accept => match event_data.get(&event.id.to_string()) {
                         Some(data) => {
-                            let reward =
-                                match status
+                            let user_status =
+                                status
                                     .filter(id.eq(user_status_id))
-                                    .first::<(i32, String, i32)>(conn)
-                                {
-                                    Err(_) => {
-                                        return WSResponse::Error(
-                                            "Internal Server Error".to_string(),
-                                        )
-                                    }
-                                    Ok(user_status) => {
-                                        if user_status.1 != data.name {
-                                            return WSResponse::Error(
-                                                "Cannot Accept event which wasn't requested"
-                                                    .to_string(),
-                                            );
-                                        }
-                                        data.reward - user_status.2 * EVENT_POSTPONE_PENALTY
-                                    }
-                                };
+                                    .first::<(i32, String, i32)>(conn)?;
+                            let reward = if user_status.1 != data.name {
+                                return Ok(WSResponse::Error(
+                                    "Cannot Accept event which wasn't requested".to_string(),
+                                ));
+                            } else {
+                                data.reward - user_status.2 * EVENT_POSTPONE_PENALTY
+                            };
 
-                            match diesel::update(users.filter(email.eq(user.email)))
+                            diesel::update(users.filter(email.eq(user.email)))
                                 .set(money.eq(money + reward))
-                                .execute(conn)
-                            {
-                                Err(_) => {
-                                    return WSResponse::Error("Internal Server Error".to_string())
-                                }
-                                Ok(_) => (),
-                            }
+                                .execute(conn)?;
 
                             let recvd_params = [
                                 event.params.ideal_reproduction_number,
@@ -642,67 +545,33 @@ impl Event {
                             let f = sim.simulate(0_f64, TOTAL_DAYS - event.cur_date);
                             let payload = serialize_state(&f, POPULATION);
 
-                            return WSResponse::Event(SimulatorResponse {
+                            Ok(WSResponse::Event(SimulatorResponse {
                                 region: data.region,
                                 payload,
                                 ideal_reproduction_number: changed_params[0],
                                 compliance_factor: changed_params[1],
                                 recovery_rate: changed_params[2],
                                 infection_rate: changed_params[3],
-                            });
+                            }))
                         }
-                        None => return WSResponse::Error("Invalid request sent".to_string()),
+                        None => Ok(WSResponse::Error("Invalid request sent".to_string())),
                     },
                     EventAction::Decline => {
-                        match status
+                        diesel::update(status)
                             .filter(id.eq(user_status_id))
-                            .first::<(i32, String, i32)>(conn)
-                        {
-                            Err(_) => {
-                                return WSResponse::Error("Internal Server Error".to_string())
-                            }
-                            Ok(user_status) => {
-                                match diesel::update(status)
-                                    .filter(id.eq(user_status_id))
-                                    .set((current_event.eq("None"), postponed.eq(0)))
-                                    .execute(conn)
-                                {
-                                    Err(_) => {
-                                        return WSResponse::Error(
-                                            "Internal Server Error".to_string(),
-                                        )
-                                    }
-                                    Ok(_) => return WSResponse::Ok("Declined".to_string()),
-                                }
-                            }
-                        }
+                            .set((current_event.eq("None"), postponed.eq(0)))
+                            .execute(conn)?;
+                        Ok(WSResponse::Ok("Declined".to_string()))
                     }
                     EventAction::Postpone => {
-                        match status
+                        diesel::update(status)
                             .filter(id.eq(user_status_id))
-                            .first::<(i32, String, i32)>(conn)
-                        {
-                            Err(_) => {
-                                return WSResponse::Error("Internal Server Error".to_string())
-                            }
-                            Ok(user_status) => {
-                                match diesel::update(status)
-                                    .filter(id.eq(user_status_id))
-                                    .set(postponed.eq(postponed + 1))
-                                    .execute(conn)
-                                {
-                                    Err(_) => {
-                                        return WSResponse::Error(
-                                            "Internal Server Error".to_string(),
-                                        )
-                                    }
-                                    Ok(_) => return WSResponse::Ok("Postponed".to_string()),
-                                }
-                            }
-                        }
+                            .set(postponed.eq(postponed + 1))
+                            .execute(conn)?;
+                        Ok(WSResponse::Ok("Postponed".to_string()))
                     }
                 }
             }
-        };
+        }
     }
 }

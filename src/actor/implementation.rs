@@ -2,12 +2,12 @@ use crate::db::types::PgPool;
 
 use crate::actor::events::types::{ControlMeasure, Event, Seed, Start, WSRequest, WSResponse};
 
+use crate::db::types::DbError;
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
 use actix_web::web;
 pub use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
-use serde_json;
 
 use std::time::{Duration, Instant};
 
@@ -27,6 +27,13 @@ impl Actor for Game {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.heartbeat(ctx);
+    }
+}
+
+fn ws_response(res: Result<WSResponse, DbError>) -> WSResponse {
+    match res {
+        Ok(x) => x,
+        Err(_) => WSResponse::Error("Internal Server Error".to_string()),
     }
 }
 
@@ -51,10 +58,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                 let conn = self.pool.get().expect("Couldn't get DB connection");
 
                 let res = match request.kind.as_str() {
-                    "Seed" => Seed::handle(&self.user, &conn),
-                    "Start" => Start::handle(request.payload, &self.user, &conn),
-                    "Control" => ControlMeasure::handle(request.payload, &self.user, &conn),
-                    "Event" => Event::handle(request.payload, &self.user, &conn),
+                    "Seed" => ws_response(Seed::handle(&self.user, &conn)),
+                    "Start" => ws_response(Start::handle(request.payload, &self.user, &conn)),
+                    "Control" => {
+                        ws_response(ControlMeasure::handle(request.payload, &self.user, &conn))
+                    }
+                    "Event" => ws_response(Event::handle(request.payload, &self.user, &conn)),
                     _ => WSResponse::Error("Invalid request sent".to_string()),
                 };
                 ctx.text(res.stringify())

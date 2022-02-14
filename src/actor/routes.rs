@@ -11,9 +11,9 @@ pub async fn ws_index(
     user: auth::extractors::Authenticated,
 ) -> Result<HttpResponse, Error> {
     println!("Here");
-    // if user.is_none() {
-    //     return Ok(HttpResponse::Ok().status(StatusCode::UNAUTHORIZED).finish());
-    // }
+    if user.is_none() {
+        return Ok(HttpResponse::Ok().status(StatusCode::UNAUTHORIZED).finish());
+    }
     let res = implementation::ws::start(implementation::Game::new(pool, user), &r, stream);
     println!("{:?}", res);
     res
