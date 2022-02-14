@@ -33,6 +33,7 @@ enum_str!(
         Start(SimulatorResponse),
         Control(SimulatorResponse),
         Event(SimulatorResponse),
+        EventParams(EventParams),
         Error(String),
         Ok(String),
     }
