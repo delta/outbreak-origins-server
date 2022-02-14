@@ -1,5 +1,3 @@
-use crate::db::models;
-use crate::db::types::DbError;
 use crate::db::types::PgPool;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;
