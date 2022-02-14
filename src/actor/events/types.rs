@@ -71,7 +71,7 @@ pub enum ControlMeasureAction {
 
 #[derive(Deserialize)]
 pub struct ControlMeasure {
-    pub level: u32,
+    pub level: i32,
     pub cur_date: f64,
     pub name: String,
     pub params: SimulatorParams,
@@ -124,7 +124,7 @@ pub struct ControlMeasureLevel {
 #[derive(Deserialize)]
 pub struct ControlMeasureParams {
     pub description: String,
-    pub levels: HashMap<String, ControlMeasureLevel>,
+    pub levels: HashMap<i32, ControlMeasureLevel>,
 }
 
 #[derive(Serialize, Deserialize)]

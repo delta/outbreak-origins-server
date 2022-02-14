@@ -11,7 +11,7 @@ use crate::db::schema::{regions, regions_status, status};
 
 #[derive(AsExpression, FromSqlRow, Serialize, Deserialize, Clone, Debug)]
 #[sql_type = "Jsonb"]
-pub struct ActiveControlMeasures(pub Vec<HashMap<String, i32>>);
+pub struct ActiveControlMeasures(pub HashMap<String, i32>);
 
 impl FromSql<Jsonb, Pg> for ActiveControlMeasures {
     fn from_sql(bytes: Option<&[u8]>) -> diesel::deserialize::Result<Self> {
