@@ -60030,13 +60030,6 @@
 				}
 			],
 			"population": 5000,
-			"events_data": {
-				"1": {
-					"name": "Election",
-					"reward": 100,
-					"description": "Election"
-				}
-			}
 		}
 	},
 	"control_measure_data": {
