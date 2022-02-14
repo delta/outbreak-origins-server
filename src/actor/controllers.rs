@@ -488,9 +488,13 @@ impl Event {
                                 .set((current_event.eq(data.name.clone()), postponed.eq(0)))
                                 .execute(conn)?;
 
-                            Ok(WSResponse::Seed(
-                                serde_json::to_string::<EventParams>(data).unwrap(),
-                            ))
+                            Ok(WSResponse::EventParams(EventParams {
+                                name: data.name.clone(),
+                                description: data.description.clone(),
+                                params_delta: data.params_delta.clone(),
+                                region: data.region,
+                                reward: data.reward,
+                            }))
                         }
                         None => Ok(WSResponse::Error("Couldn't read the file".to_string())),
                     },
