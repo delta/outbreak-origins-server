@@ -1,9 +1,12 @@
 use crate::db::models::Claims;
 use chrono::{Duration, Utc};
+use dotenv::dotenv;
 use jsonwebtoken::{
     decode, encode, errors::Result, Algorithm, DecodingKey, EncodingKey, Header, TokenData,
     Validation,
 };
+use sendgrid::{Destination, Mail, SGClient};
+use std::env;
 
 // Result is from jsonwebtoken error
 pub fn create_jwt(id: i32, email: String, created_at: Option<usize>) -> Result<String> {
@@ -43,4 +46,23 @@ pub fn get_info_token(token: String) -> Result<TokenData<Claims>> {
         &Validation::new(Algorithm::HS512),
     );
     token_message
+}
+
+pub fn send_mail() {
+    dotenv().expect("Can't load environment variables");
+
+    let api_key = env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
+
+    let mail: Mail = Mail::new()
+        .add_to(Destination {
+            address: "mukundh.srivathsan.nitt@gmail.com",
+            name: "Mukundh",
+        })
+        .add_from("mukundhsrivathsan@gmail.com")
+        .add_subject("Hello World!")
+        .add_html("<h1>Hello World!</h1>");
+
+    let sgc = SGClient::new(api_key);
+
+    SGClient::send(&sgc, mail).expect("Failed to send email");
 }

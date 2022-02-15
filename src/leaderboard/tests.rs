@@ -31,6 +31,7 @@ async fn test_get_leaderboard() {
             email: "usera@email.com".to_string(),
             score: 10,
             money: 100,
+            token: "".to_string(),
         },
         models::NewUser {
             firstname: "User".to_string(),
@@ -39,6 +40,7 @@ async fn test_get_leaderboard() {
             email: "userb@email.com".to_string(),
             score: 50,
             money: 25,
+            token: "".to_string(),
         },
         models::NewUser {
             firstname: "User".to_string(),
@@ -47,6 +49,7 @@ async fn test_get_leaderboard() {
             email: "userc@email.com".to_string(),
             score: 0,
             money: 0,
+            token: "".to_string(),
         },
     ];
 

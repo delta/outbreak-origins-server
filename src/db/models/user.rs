@@ -12,6 +12,7 @@ pub struct User {
     pub lastname: String,
     pub score: i32,
     pub money: i32,
+    pub token: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
@@ -23,6 +24,7 @@ pub struct NewUser {
     pub email: String,
     pub score: i32,
     pub money: i32,
+    pub token: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

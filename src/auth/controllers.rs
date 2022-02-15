@@ -20,6 +20,7 @@ pub fn insert_new_user(
         email: femail.to_owned(),
         score: 0,
         money: 0,
+        token: "".to_owned(),
     };
 
     diesel::insert_into(users).values(&new_user).execute(conn)?;
@@ -55,3 +56,5 @@ pub fn verify_user_by_email(
     };
     Ok(is_verified)
 }
+
+

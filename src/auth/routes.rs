@@ -87,6 +87,34 @@ async fn login_user(
     Ok(resp)
 }
 
+// #[post("/user/verify?<token>&<email>")]
+// async fn verify_user(
+//     pool: web::Data<PgPool>,
+//     token: web::Path<String>,
+// ) -> Result<HttpResponse, Error> {
+//     let (is_verified, status) = web::block(move || {
+//         let conn = pool.get()?;
+//         controllers::verify_user_by_token(&token, &conn)
+//     })
+//     .await
+//     .map_err(|e| {
+//         eprintln!("{}", e);
+//         HttpResponse::InternalServerError().finish()
+//     })?;
+//     let resp = HttpResponse::Ok()
+//         .status(if is_verified {
+//             StatusCode::OK
+//         } else {
+//             StatusCode::UNAUTHORIZED
+//         })
+//         .json(response::AuthResult {
+//             is_verified,
+//             status,
+//         });
+//     Ok(resp)
+// }
+
+
 pub fn auth_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/auth")

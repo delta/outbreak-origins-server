@@ -42,10 +42,16 @@ table! {
         lastname -> Text,
         score -> Int4,
         money -> Int4,
+        token -> Text,
     }
 }
 
 joinable!(status -> events (current_event));
 joinable!(status -> regions (regions));
 
-allow_tables_to_appear_in_same_query!(events, regions, status, users,);
+allow_tables_to_appear_in_same_query!(
+    events,
+    regions,
+    status,
+    users,
+);
