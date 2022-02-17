@@ -1,4 +1,4 @@
-use crate::auth::{controllers, extractors, response};
+use crate::auth::{controllers, extractors, response, utils};
 use crate::db::models;
 use crate::db::types::PgPool;
 use actix_identity::Identity;
@@ -7,7 +7,7 @@ use actix_web::{get, http::StatusCode, post, web, Error, HttpResponse};
 #[post("/user/register")]
 async fn register_user(
     pool: web::Data<PgPool>,
-    form: web::Json<models::NewUser>,
+    form: web::Json<models::RegisterUser>,
 ) -> Result<HttpResponse, Error> {
     web::block(move || {
         let conn = pool.get()?;
@@ -87,33 +87,32 @@ async fn login_user(
     Ok(resp)
 }
 
-// #[post("/user/verify?<token>&<email>")]
-// async fn verify_user(
-//     pool: web::Data<PgPool>,
-//     token: web::Path<String>,
-// ) -> Result<HttpResponse, Error> {
-//     let (is_verified, status) = web::block(move || {
-//         let conn = pool.get()?;
-//         controllers::verify_user_by_token(&token, &conn)
-//     })
-//     .await
-//     .map_err(|e| {
-//         eprintln!("{}", e);
-//         HttpResponse::InternalServerError().finish()
-//     })?;
-//     let resp = HttpResponse::Ok()
-//         .status(if is_verified {
-//             StatusCode::OK
-//         } else {
-//             StatusCode::UNAUTHORIZED
-//         })
-//         .json(response::AuthResult {
-//             is_verified,
-//             status,
-//         });
-//     Ok(resp)
-// }
-
+#[get("/user/verify")]
+async fn verify_user(
+    pool: web::Data<PgPool>,
+    params: web::Query<utils::UserVerify>,
+) -> Result<HttpResponse, Error> {
+    let (is_verified, _token, status) = web::block(move || {
+        let conn = pool.get()?;
+        controllers::verify_user_by_token(params.email.as_str(), params.token.to_string(), &conn)
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("{}", e);
+        HttpResponse::InternalServerError().finish()
+    })?;
+    let resp = HttpResponse::Ok()
+        .status(if is_verified {
+            StatusCode::OK
+        } else {
+            StatusCode::UNAUTHORIZED
+        })
+        .json(response::AuthResult {
+            is_verified,
+            status,
+        });
+    Ok(resp)
+}
 
 pub fn auth_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -121,6 +120,7 @@ pub fn auth_routes(cfg: &mut web::ServiceConfig) {
             .service(register_user)
             .service(logout_user)
             .service(login_user)
-            .service(check_auth),
+            .service(check_auth)
+            .service(verify_user),
     );
 }

@@ -6,7 +6,14 @@ use jsonwebtoken::{
     Validation,
 };
 use sendgrid::{Destination, Mail, SGClient};
+use serde::{Deserialize, Serialize};
 use std::env;
+
+#[derive(Serialize, Deserialize)]
+pub struct UserVerify {
+    pub email: String,
+    pub token: String,
+}
 
 // Result is from jsonwebtoken error
 pub fn create_jwt(id: i32, email: String, created_at: Option<usize>) -> Result<String> {
@@ -48,10 +55,21 @@ pub fn get_info_token(token: String) -> Result<TokenData<Claims>> {
     token_message
 }
 
-pub fn send_mail() {
+pub fn send_mail(token: String) {
+    println!("{}", token);
+
     dotenv().expect("Can't load environment variables");
 
     let api_key = env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
+
+    let link = format!(
+        "http://{}/auth/user/verify?token={}&email={}",
+        env::var("APP_URL").expect("APP_URL must be set"),
+        token,
+        "mukundh.srivathsan.nitt@gmail.com"
+    );
+
+    let msg = format!("<h1>Click this link<h1>\n<href>{}<href>", link);
 
     let mail: Mail = Mail::new()
         .add_to(Destination {
@@ -60,9 +78,21 @@ pub fn send_mail() {
         })
         .add_from("mukundhsrivathsan@gmail.com")
         .add_subject("Hello World!")
-        .add_html("<h1>Hello World!</h1>");
+        .add_html(msg.as_str());
 
     let sgc = SGClient::new(api_key);
 
     SGClient::send(&sgc, mail).expect("Failed to send email");
+}
+
+pub fn gen_token() -> String {
+    use rand::Rng;
+
+    let mut str = String::new();
+
+    for (_i, _) in (0..32).enumerate() {
+        str.push(rand::thread_rng().gen_range(97_u8..122_u8) as char);
+    }
+
+    str
 }

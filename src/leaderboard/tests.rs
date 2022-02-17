@@ -32,6 +32,7 @@ async fn test_get_leaderboard() {
             score: 10,
             money: 100,
             token: "".to_string(),
+            is_email_verified: true,
         },
         models::NewUser {
             firstname: "User".to_string(),
@@ -41,6 +42,7 @@ async fn test_get_leaderboard() {
             score: 50,
             money: 25,
             token: "".to_string(),
+            is_email_verified: true,
         },
         models::NewUser {
             firstname: "User".to_string(),
@@ -50,6 +52,7 @@ async fn test_get_leaderboard() {
             score: 0,
             money: 0,
             token: "".to_string(),
+            is_email_verified: true,
         },
     ];
 

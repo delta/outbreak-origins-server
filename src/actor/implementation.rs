@@ -89,7 +89,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                             .collect();
 
                         println!("{}", rand_string);
-                        
+
                         let mail: Mail = Mail::new()
                             .add_to(Destination {
                                 address: "mukundh.srivathsan.nitt@gmail.com",
