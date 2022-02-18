@@ -33,10 +33,13 @@ async fn register_user(
     }))
 }
 
-#[get("/user/logout")]
+#[post("/user/logout")]
 async fn logout_user(id: Identity) -> Result<HttpResponse, Error> {
     id.forget();
-    let resp = HttpResponse::Ok().json(response::LogoutResult { status: true });
+    let resp = HttpResponse::Ok().json(response::LogoutResult {
+        is_logged_out: true,
+        status: String::from("Logged out successfully"),
+    });
     Ok(resp)
 }
 

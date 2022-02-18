@@ -8,7 +8,8 @@ pub struct AuthResult {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct LogoutResult {
-    pub status: bool,
+    pub is_logged_out: bool,
+    pub status: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
