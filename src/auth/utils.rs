@@ -61,6 +61,7 @@ pub fn send_mail(token: String, email: &str, name: &str) {
     dotenv().expect("Can't load environment variables");
 
     let api_key = env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
+    let from_mail = env::var("SENDGRID_VERIFIED_MAIL").expect("SENDGRID_VERIFIED_MAIL must be set");
 
     let link = format!(
         "http://{}/auth/user/verify?token={}&email={}",
@@ -76,7 +77,7 @@ pub fn send_mail(token: String, email: &str, name: &str) {
             address: email,
             name: name,
         })
-        .add_from("mukundhsrivathsan@gmail.com")
+        .add_from(from_mail.as_str())
         .add_subject("Verify your account")
         .add_html(msg.as_str());
 
