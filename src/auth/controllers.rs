@@ -24,8 +24,8 @@ pub fn insert_new_user(
         token: t.to_owned(),
         is_email_verified: false,
     };
-    send_mail(t);
     diesel::insert_into(users).values(&new_user).execute(conn)?;
+    send_mail(t, femail, ffirstname);
     Ok(())
 }
 

@@ -14,12 +14,6 @@ use std::path::Path;
 
 use std::time::{Duration, Instant};
 
-use dotenv::dotenv;
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
-use sendgrid::{Destination, Mail, SGClient};
-use std::env;
-
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -76,32 +70,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                         // serilising the data
                         let payload = serialize_state(&f, n.population);
                         ctx.text(WSResponse::Start(StartResponse { payload }).stringify());
-
-                        dotenv().expect("Can't load environment variables");
-
-                        let api_key =
-                            env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
-
-                        let rand_string: String = thread_rng()
-                            .sample_iter(&Alphanumeric)
-                            .take(30)
-                            .map(char::from)
-                            .collect();
-
-                        println!("{}", rand_string);
-
-                        let mail: Mail = Mail::new()
-                            .add_to(Destination {
-                                address: "mukundh.srivathsan.nitt@gmail.com",
-                                name: "Mukundh",
-                            })
-                            .add_from("mukundhsrivathsan@gmail.com")
-                            .add_subject("Hello World!")
-                            .add_html("<h1>Hello World!</h1>");
-
-                        let sgc = SGClient::new(api_key);
-
-                        SGClient::send(&sgc, mail).expect("Failed to send email");
                     }
                 }
             }

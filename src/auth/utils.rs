@@ -55,7 +55,7 @@ pub fn get_info_token(token: String) -> Result<TokenData<Claims>> {
     token_message
 }
 
-pub fn send_mail(token: String) {
+pub fn send_mail(token: String, email: &str, name: &str) {
     println!("{}", token);
 
     dotenv().expect("Can't load environment variables");
@@ -66,18 +66,18 @@ pub fn send_mail(token: String) {
         "http://{}/auth/user/verify?token={}&email={}",
         env::var("APP_URL").expect("APP_URL must be set"),
         token,
-        "mukundh.srivathsan.nitt@gmail.com"
+        email
     );
 
-    let msg = format!("<h1>Click this link<h1>\n<href>{}<href>", link);
+    let msg = format!("<h1>Click this link</h1>\n<p>Greetings from outbreak origins, click on this link to verify your email and start playing</p>\n<href>{}</href>", link);
 
     let mail: Mail = Mail::new()
         .add_to(Destination {
-            address: "mukundh.srivathsan.nitt@gmail.com",
-            name: "Mukundh",
+            address: email,
+            name: name,
         })
         .add_from("mukundhsrivathsan@gmail.com")
-        .add_subject("Hello World!")
+        .add_subject("Verify your account")
         .add_html(msg.as_str());
 
     let sgc = SGClient::new(api_key);
@@ -91,7 +91,7 @@ pub fn gen_token() -> String {
     let mut str = String::new();
 
     for (_i, _) in (0..32).enumerate() {
-        str.push(rand::thread_rng().gen_range(97_u8..122_u8) as char);
+        str.push(rand::thread_rng().gen_range(33_u8..126_u8) as char);
     }
 
     str
