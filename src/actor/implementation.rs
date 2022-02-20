@@ -1,6 +1,8 @@
 use crate::db::types::PgPool;
 
-use crate::actor::events::types::{ControlMeasure, Event, Seed, Start, WSRequest, WSResponse};
+use crate::actor::events::types::{
+    ControlMeasure, Event, Save, Seed, Start, WSRequest, WSResponse,
+};
 
 use crate::db::types::DbError;
 use actix::prelude::*;
@@ -64,6 +66,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                         ws_response(ControlMeasure::handle(request.payload, &self.user, &conn))
                     }
                     "Event" => ws_response(Event::handle(request.payload, &self.user, &conn)),
+                    "Save" => ws_response(Save::handle(request.payload, &self.user, &conn)),
                     _ => WSResponse::Error("Invalid request sent".to_string()),
                 };
                 ctx.text(res.stringify())
