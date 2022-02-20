@@ -71,6 +71,12 @@ pub enum ControlMeasureAction {
 }
 
 #[derive(Deserialize)]
+pub struct Save {
+    pub region: u32,
+    pub params: SimulatorParams,
+}
+
+#[derive(Deserialize)]
 pub struct ControlMeasure {
     pub level: i32,
     pub cur_date: f64,

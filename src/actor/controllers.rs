@@ -1,6 +1,6 @@
 use crate::actor::events::types::{
     ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventAction, EventParams,
-    Seed, SimulatorParams, SimulatorResponse, Start, StartParams, WSResponse,
+    Save, Seed, SimulatorParams, SimulatorResponse, Start, StartParams, WSResponse,
 };
 use crate::db::models;
 use diesel::prelude::*;
@@ -575,6 +575,48 @@ impl Event {
                         Ok(WSResponse::Ok("Postponed".to_string()))
                     }
                 }
+            }
+        }
+    }
+}
+
+impl Save {
+    pub fn handle(
+        payload: String,
+        user: &extractors::Authenticated,
+        conn: &PgConnection,
+    ) -> Result<WSResponse, DbError> {
+        use crate::db::schema::{regions, regions_status, users};
+        let save_request_result = serde_json::from_str::<Save>(&payload);
+        let user = user.0.as_ref().unwrap();
+        let user = (users::table)
+            .filter(users::email.eq(user.email.clone()))
+            .first::<models::User>(conn)
+            .optional()?;
+        let user = match user {
+            None => return Ok(WSResponse::Error("User not found".to_string())),
+            Some(y) => y,
+        };
+
+        match save_request_result {
+            Err(x) => Ok(WSResponse::Error("Couldn't parse request".to_string())),
+            Ok(save_request) => {
+                let status_id = match user.status {
+                    Some(status_id) => status_id,
+                    None => return Ok(WSResponse::Error("Internal Server Error".to_string())),
+                };
+                diesel::update(regions::table)
+                    .set(regions::simulation_params.eq(save_request.params))
+                    .filter(regions::region_id.eq(save_request.region as i32))
+                    .filter(
+                        regions::id.eq_any(
+                            regions_status::table
+                                .filter(regions_status::status_id.eq(status_id))
+                                .select(regions_status::region_id),
+                        ),
+                    )
+                    .execute(conn)?;
+                Ok(WSResponse::Ok("Saved".to_string()))
             }
         }
     }
