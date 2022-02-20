@@ -1,4 +1,6 @@
+use crate::db::models::status::ActiveControlMeasures;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Deserialize)]
 pub struct StartLevelRequest {
@@ -8,4 +10,10 @@ pub struct StartLevelRequest {
 #[derive(Serialize)]
 pub struct StartLevelError {
     pub message: String,
+}
+
+#[derive(Serialize)]
+pub struct ActiveControlMeasuresResponse {
+    pub num_control_measures: usize,
+    pub active_control_measures: HashMap<String, Vec<ActiveControlMeasures>>,
 }

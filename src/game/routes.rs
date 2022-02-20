@@ -1,49 +1,12 @@
 use crate::auth::extractors::Authenticated;
 use crate::db::types::PgPool;
+use crate::game::controllers::get_active_control_measures;
 use crate::game::response;
 use crate::levels::controllers::get_current_level;
 use actix_web::{get, web, Error, HttpResponse};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
-// #[get("/money")]
-// async fn get_money() -> Result<HttpResponse, Error> {
-
-// }
-
-// #[get("/level-score")]
-// async fn get_level_score() -> Result<HttpResponse, Error> {
-
-// }
-
-// #[get("/active-control-measures/")]
-// async fn get_active_control_measures() -> Result<HttpResponse, Error> {
-
-// }
-
-// #[get("/active-events/")]
-// async fn get_active_events() -> Result<HttpResponse, Error> {
-
-// }
-
-// #[get("/event")]
-// async fn get_event() -> Result<HttpResponse, Error> {
-
-// }
-
-// #[post("/apply")]
-// async fn apply_control_measures() -> Result<HttpResponse, Error> {
-
-// }
-
-// #[post("/handle-event/")]
-// async fn handle_event() -> Result<HttpResponse, Error> {
-
-// }
-
-// #[post("/end-level")]
-// async fn end_level() -> Result<HttpResponse, Error> {
-
-// }
 
 #[get("/start-level")]
 async fn start_level(
@@ -67,6 +30,25 @@ async fn start_level(
     }
 }
 
+#[get("/active-control-measures")]
+async fn active_control_measures(
+    user: Authenticated,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, Error> {
+    let acm_res = get_active_control_measures(&pool.get().unwrap(), user).map_err(|e| {
+        eprintln!("{}", e);
+        HttpResponse::InternalServerError().json(response::ActiveControlMeasuresResponse {
+            num_control_measures: 0,
+            active_control_measures: HashMap::new(),
+        })
+    })?;
+    Ok(HttpResponse::Ok().json(acm_res))
+}
+
 pub fn game_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/user/api/").service(start_level));
+    cfg.service(
+        web::scope("/user/api/")
+            .service(start_level)
+            .service(active_control_measures),
+    );
 }
