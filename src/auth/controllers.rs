@@ -19,10 +19,7 @@ pub fn insert_new_user(
         lastname: flastname.to_owned(),
         password: hash(fpassword.to_owned(), DEFAULT_COST)?,
         email: femail.to_owned(),
-        score: 0,
-        money: 0,
         token: t.to_owned(),
-        is_email_verified: false,
     };
     diesel::insert_into(users).values(&new_user).execute(conn)?;
     send_mail(t, femail, ffirstname);

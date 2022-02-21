@@ -4,4 +4,4 @@ mod user;
 
 pub use events::Event;
 pub use jwt::Claims;
-pub use user::{LeaderboardEntry, LoginUser, NewUser, RegisterUser, User};
+pub use user::{LeaderboardEntry, LoginUser, RegisterUser, NewUser, User, TestUser};

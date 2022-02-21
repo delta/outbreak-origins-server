@@ -24,7 +24,7 @@ async fn test_get_leaderboard() {
         .expect("Couldn't get test DB connection");
 
     let test_users = vec![
-        models::NewUser {
+        models::TestUser {
             firstname: "User".to_string(),
             lastname: "A".to_string(),
             password: "".to_string(),
@@ -34,7 +34,7 @@ async fn test_get_leaderboard() {
             token: "".to_string(),
             is_email_verified: true,
         },
-        models::NewUser {
+        models::TestUser {
             firstname: "User".to_string(),
             lastname: "B".to_string(),
             password: "".to_string(),
@@ -44,7 +44,7 @@ async fn test_get_leaderboard() {
             token: "".to_string(),
             is_email_verified: true,
         },
-        models::NewUser {
+        models::TestUser {
             firstname: "User".to_string(),
             lastname: "C".to_string(),
             password: "".to_string(),

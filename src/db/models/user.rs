@@ -23,6 +23,16 @@ pub struct NewUser {
     pub lastname: String,
     pub password: String,
     pub email: String,
+    pub token: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
+#[table_name = "users"]
+pub struct TestUser {
+    pub firstname: String,
+    pub lastname: String,
+    pub password: String,
+    pub email: String,
     pub score: i32,
     pub money: i32,
     pub token: String,
