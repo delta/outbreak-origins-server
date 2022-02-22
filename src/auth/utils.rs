@@ -16,7 +16,7 @@ pub struct UserVerify {
 }
 
 // Result is from jsonwebtoken error
-pub fn create_jwt(id: i32, email: String, created_at: Option<usize>) -> Result<String> {
+pub fn create_jwt(types: String, email: String, created_at: Option<usize>) -> Result<String> {
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET");
     let expiry = std::env::var("EXPIRY")
         .expect("EXPIRY")
@@ -28,7 +28,7 @@ pub fn create_jwt(id: i32, email: String, created_at: Option<usize>) -> Result<S
         .timestamp();
 
     let claims = Claims {
-        id,
+        types,
         email,
         created_at: if let Some(c) = created_at {
             c
@@ -55,9 +55,7 @@ pub fn get_info_token(token: String) -> Result<TokenData<Claims>> {
     token_message
 }
 
-pub fn send_mail(token: String, email: &str, name: &str) {
-    println!("{}", token);
-
+pub fn verify_user(token: String, email: &str, name: &str) {
     dotenv().expect("Can't load environment variables");
 
     let api_key = env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
@@ -96,4 +94,36 @@ pub fn gen_token() -> String {
     }
 
     str
+}
+
+#[allow(dead_code)]
+pub fn reset_password(email: &str, name: &str) {
+    dotenv().expect("Can't load environment variables");
+
+    let api_key = env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
+    let from_mail = env::var("SENDGRID_VERIFIED_MAIL").expect("SENDGRID_VERIFIED_MAIL must be set");
+
+    let reset_jwt = create_jwt("reset".to_string(), email.to_string(), None);
+
+    let link = format!(
+        "http://{}/auth/user/reset_password?email={}&jwt={}",
+        env::var("APP_URL").expect("APP_URL must be set"),
+        email,
+        reset_jwt.unwrap()
+    );
+
+    let msg = format!("<h1>Click this link</h1>\n<p>Greetings from outbreak origins, click on this link to reset your password</p>\n<href>{}</href>", link);
+
+    let mail: Mail = Mail::new()
+        .add_to(Destination {
+            address: email,
+            name,
+        })
+        .add_from(from_mail.as_str())
+        .add_subject("Reset your password")
+        .add_html(msg.as_str());
+
+    let sgc = SGClient::new(api_key);
+
+    SGClient::send(&sgc, mail).expect("Failed to send email");
 }

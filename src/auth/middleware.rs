@@ -63,7 +63,7 @@ where
             Some(iden) => {
                 if let Ok(claim) = get_info_token(iden) {
                     (
-                        Some(claim.claims.id),
+                        Some(claim.claims.types.clone()),
                         Some(claim.claims.email.clone()),
                         Some(claim.claims.exp),
                         Some(claim.claims.created_at),

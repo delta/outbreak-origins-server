@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use crate::auth::utils::{create_jwt, gen_token, send_mail};
+use crate::auth::utils::{create_jwt, gen_token, verify_user};
 use crate::db::models;
 use crate::db::types::DbError;
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -22,7 +22,7 @@ pub fn insert_new_user(
         token: t.to_owned(),
     };
     diesel::insert_into(users).values(&new_user).execute(conn)?;
-    send_mail(t, femail, ffirstname);
+    verify_user(t, femail, ffirstname);
     Ok(())
 }
 
@@ -42,7 +42,7 @@ pub fn verify_user_by_email(
                 if verify(fpassword.to_owned(), &p)? {
                     (
                         true,
-                        create_jwt(u.id, u.email, None)?,
+                        create_jwt(u.id.to_string(), u.email, None)?,
                         String::from("Successfully authenticated"),
                     )
                 } else {
@@ -75,7 +75,7 @@ pub fn verify_user_by_token(
                 println!("{}", verified);
                 (
                     true,
-                    create_jwt(u.id, u.email, None)?,
+                    create_jwt(u.id.to_string(), u.email, None)?,
                     String::from("Successfully authenticated"),
                 )
             } else {
