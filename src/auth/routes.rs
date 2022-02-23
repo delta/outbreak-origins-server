@@ -92,7 +92,7 @@ async fn verify_user(
     pool: web::Data<PgPool>,
     params: web::Query<utils::UserVerify>,
 ) -> Result<HttpResponse, Error> {
-    let (is_verified, _token, status) = web::block(move || {
+    let (is_verified, status) = web::block(move || {
         let conn = pool.get()?;
         controllers::verify_user_by_token(params.email.as_str(), params.token.to_string(), &conn)
     })
@@ -105,7 +105,7 @@ async fn verify_user(
         .status(if is_verified {
             StatusCode::OK
         } else {
-            StatusCode::UNAUTHORIZED
+            StatusCode::NOT_ACCEPTABLE
         })
         .json(response::AuthResult {
             is_verified,
@@ -119,9 +119,9 @@ async fn reset_password(
     pool: web::Data<PgPool>,
     params: web::Query<utils::UserVerify>,
 ) -> Result<HttpResponse, Error> {
-    let (is_verified, _token, status) = web::block(move || {
+    let (is_verified, status) = web::block(move || {
         let conn = pool.get()?;
-        controllers::verify_user_by_token(params.email.as_str(), params.token.to_string(), &conn)
+        controllers::reset_password(params.email.as_str(), params.token.to_string(), &conn)
     })
     .await
     .map_err(|e| {

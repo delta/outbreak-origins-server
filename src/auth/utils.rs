@@ -68,7 +68,7 @@ pub fn verify_user(token: String, email: &str, name: &str) {
         email
     );
 
-    let msg = format!("<h1>Click this link</h1>\n<p>Greetings from outbreak origins, click on this link to verify your email and start playing</p>\n<href>{}</href>", link);
+    let msg = format!("<h1>Click this link</h1>\n<p>Greetings from outbreak origins, use this <a href {}>link</a> to verify your email and start playing</p>", link);
 
     let mail: Mail = Mail::new()
         .add_to(Destination {
@@ -97,7 +97,7 @@ pub fn gen_token() -> String {
 }
 
 #[allow(dead_code)]
-pub fn reset_password(email: &str, name: &str) {
+pub fn reset_password_mail(email: &str, name: &str) {
     dotenv().expect("Can't load environment variables");
 
     let api_key = env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
@@ -112,7 +112,7 @@ pub fn reset_password(email: &str, name: &str) {
         reset_jwt.unwrap()
     );
 
-    let msg = format!("<h1>Click this link</h1>\n<p>Greetings from outbreak origins, click on this link to reset your password</p>\n<href>{}</href>", link);
+    let msg = format!("<h1>Click this link</h1>\n<p>Greetings from outbreak origins, use this <a href {}>link</a> to reset your password</p>", link);
 
     let mail: Mail = Mail::new()
         .add_to(Destination {

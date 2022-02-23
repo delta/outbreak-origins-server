@@ -60,7 +60,7 @@ pub fn verify_user_by_token(
     femail: &str,
     ftoken: String,
     conn: &PgConnection,
-) -> Result<(bool, String, String), DbError> {
+) -> Result<(bool, String), DbError> {
     use crate::db::schema::users::dsl::*;
     let user = users
         .filter(email.eq(femail))
@@ -75,14 +75,39 @@ pub fn verify_user_by_token(
                 println!("{}", verified);
                 (
                     true,
-                    create_jwt(u.id.to_string(), u.email, None)?,
                     String::from("Successfully authenticated"),
                 )
             } else {
-                (false, String::new(), String::from("Wrong Token"))
+                (false, String::from("Wrong Token"))
             }
         }
-        None => (false, String::new(), String::from("User doesn't exist")),
+        None => (false, String::from("User doesn't exist")),
     };
     Ok(is_verified)
+}
+
+pub fn reset_password(
+    femail: &str,
+    ftoken: String,
+    conn: &PgConnection,
+) -> Result<(bool, String), DbError> {
+    use crate::db::schema::users::dsl::*;
+    let user = users
+        .filter(email.eq(femail))
+        .first::<models::User>(conn)
+        .optional()?;
+    let is_reset = match user {
+        Some(u) => {
+            if u.token == ftoken {
+                (
+                    true,
+                    String::from("valid JWT"),
+                )
+            } else {
+                (false, String::from("Wrong JWT"))
+            }
+        }
+        None => (false, String::from("User doesn't exist")),
+    };
+    Ok(is_reset)
 }
