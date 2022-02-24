@@ -58,19 +58,20 @@ where
         println!("You requested: {}", req.path());
 
         let identity = req.get_identity();
-        let (id, email, exp, created_at, user) = match identity {
-            None => (None, None, None, None, None),
+        let (kind, email, name, exp, created_at, user) = match identity {
+            None => (None, None, None, None, None, None),
             Some(iden) => {
-                if let Ok(claim) = get_info_token(iden) {
+                if let Ok(claim) = get_info_token(&iden) {
                     (
-                        Some(claim.claims.types.clone()),
+                        Some(claim.claims.kind.clone()),
                         Some(claim.claims.email.clone()),
+                        Some(claim.claims.name.clone()),
                         Some(claim.claims.exp),
                         Some(claim.claims.created_at),
                         Some(claim.claims),
                     )
                 } else {
-                    (None, None, None, None, None)
+                    (None, None, None, None, None, None)
                 }
             }
         };
@@ -79,7 +80,12 @@ where
 
         Box::pin(async move {
             let mut res = fut.await?;
-            if let (Some(i), Some(u), Some(e), Some(cr)) = (id, email, exp, created_at) {
+            if let (Some(k), Some(em), Some(n), Some(e), Some(cr)) =
+                (kind, email, name, exp, created_at)
+            {
+                if &k != "Login" {
+                    return Ok(res);
+                }
                 let expiry = std::env::var("EXPIRY")
                     .expect("EXPIRY")
                     .parse::<i64>()
@@ -100,14 +106,14 @@ where
                     >= e
                     && (if let Some(dur) = Utc
                         .timestamp(cr as i64, 0)
-                        .checked_add_signed(Duration::hours(max_age))
+                        .checked_add_signed(Duration::minutes(max_age))
                     {
                         dur > Utc::now()
                     } else {
                         false
                     })
                 {
-                    let identity = if let Ok(claims) = create_jwt(i, u, created_at) {
+                    let identity = if let Ok(claims) = create_jwt(k, em, n, created_at) {
                         Some(claims)
                     } else {
                         None

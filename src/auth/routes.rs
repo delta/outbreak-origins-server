@@ -74,6 +74,7 @@ async fn login_user(
     if is_verified {
         id.remember(token)
     }
+    println!("{:?}", status.clone());
     let resp = HttpResponse::Ok()
         .status(if is_verified {
             StatusCode::OK
@@ -114,31 +115,87 @@ async fn verify_user(
     Ok(resp)
 }
 
-#[get("/user/reset_password")]
-async fn reset_password(
-    pool: web::Data<PgPool>,
-    params: web::Query<utils::UserVerify>,
-) -> Result<HttpResponse, Error> {
-    let (is_verified, status) = web::block(move || {
-        let conn = pool.get()?;
-        controllers::reset_password(params.email.as_str(), params.token.to_string(), &conn)
-    })
-    .await
-    .map_err(|e| {
-        eprintln!("{}", e);
-        HttpResponse::InternalServerError().finish()
-    })?;
-    let resp = HttpResponse::Ok()
-        .status(if is_verified {
-            StatusCode::OK
-        } else {
-            StatusCode::UNAUTHORIZED
-        })
-        .json(response::AuthResult {
-            is_verified,
-            status,
-        });
+#[get("/user/reset_password_email")]
+async fn reset_password_email(user: extractors::Authenticated) -> Result<HttpResponse, Error> {
+    let resp = match user.0 {
+        None => HttpResponse::Ok().status(StatusCode::UNAUTHORIZED).json(
+            response::ResetPasswordResult {
+                status: false,
+                message: "User not authenticated".to_string(),
+            },
+        ),
+        Some(x) => {
+            utils::send_reset_password_mail(&x.name, &x.email).map_err(|e| {
+                eprintln!("{}", e);
+                HttpResponse::Ok().json(response::ResetPasswordResult {
+                    status: false,
+                    message: "Couldn't send reset password".to_string(),
+                });
+            })?;
+            HttpResponse::Ok().json(response::ResetPasswordResult {
+                status: false,
+                message: "Password reset email sent".to_string(),
+            })
+        }
+    };
     Ok(resp)
+}
+
+#[post("/user/token_validate")]
+async fn token_validate(
+    user: extractors::Authenticated,
+    form: web::Json<models::ResetToken>,
+) -> Result<HttpResponse, Error> {
+    if user.0.is_none() {
+        return Ok(HttpResponse::Ok()
+            .status(StatusCode::UNAUTHORIZED)
+            .json(response::TokenValidateResult { status: false }));
+    }
+    Ok(HttpResponse::Ok().json(response::TokenValidateResult {
+        status: utils::get_info_token(&form.token).is_ok(),
+    }))
+}
+
+#[post("/user/change_password")]
+async fn change_password(
+    pool: web::Data<PgPool>,
+    form: web::Json<models::ChangePassword>,
+    user: extractors::Authenticated,
+) -> Result<HttpResponse, Error> {
+    if user.0.is_none() {
+        return Ok(HttpResponse::Ok().status(StatusCode::UNAUTHORIZED).json(
+            response::ChangePasswordResult {
+                status: false,
+                message: "User not authenticated".to_string(),
+            },
+        ));
+    }
+    if let Ok(token) = utils::get_info_token(&form.jwt) {
+        if &token.claims.email != &user.0.unwrap().email {
+            return Ok(HttpResponse::Ok().json(response::ChangePasswordResult {
+                status: false,
+                message: "Token mismatch".to_string(),
+            }));
+        }
+        web::block(move || {
+            let conn = pool.get()?;
+            controllers::reset_password(&token.claims.email, &form.new_password, &conn)
+        })
+        .await
+        .map_err(|e| {
+            eprintln!("{}", e);
+            HttpResponse::InternalServerError().finish()
+        })?;
+        Ok(HttpResponse::Ok().json(response::ChangePasswordResult {
+            status: true,
+            message: "Password successfully changed".to_string(),
+        }))
+    } else {
+        Ok(HttpResponse::Ok().json(response::ChangePasswordResult {
+            status: false,
+            message: "Invalid Token".to_string(),
+        }))
+    }
 }
 
 pub fn auth_routes(cfg: &mut web::ServiceConfig) {
@@ -148,6 +205,9 @@ pub fn auth_routes(cfg: &mut web::ServiceConfig) {
             .service(logout_user)
             .service(login_user)
             .service(check_auth)
-            .service(verify_user),
+            .service(verify_user)
+            .service(reset_password_email)
+            .service(token_validate)
+            .service(change_password),
     );
 }

@@ -37,6 +37,8 @@ pub async fn ws_index(
 async fn main() -> std::io::Result<()> {
     let res = dotenv();
     if res.is_err() {
+        println!("Env error");
+        println!("{:?}", res);
         std::process::exit(1)
     }
 
