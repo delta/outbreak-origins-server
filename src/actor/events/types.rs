@@ -136,6 +136,7 @@ pub struct ControlMeasureParams {
 
 #[derive(Serialize, Deserialize)]
 pub struct EventParams {
+    pub id: i32,
     pub name: String,
     pub description: String,
     pub params_delta: Vec<f64>,
