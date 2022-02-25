@@ -12,6 +12,7 @@ pub struct NewsResponse {
 
 #[derive(Serialize)]
 pub struct SimulatorResponse {
+    pub date: i32,
     pub region: i32,
     pub payload: String,
     pub ideal_reproduction_number: f64,
@@ -79,7 +80,7 @@ pub struct Save {
 #[derive(Deserialize)]
 pub struct ControlMeasure {
     pub level: i32,
-    pub cur_date: f64,
+    pub cur_date: i32,
     pub name: String,
     pub params: SimulatorParams,
     pub region: u32,
@@ -97,7 +98,7 @@ pub enum EventAction {
 
 #[derive(Deserialize)]
 pub struct Event {
-    pub cur_date: f64,
+    pub cur_date: i32,
     pub id: i32,
     pub params: SimulatorParams,
     pub action: EventAction,
@@ -110,11 +111,7 @@ pub struct WSRequest {
     pub payload: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Seed {
-    pub num_sections: i32,
-    pub section_data: Vec<SectionData>,
-}
+pub struct Seed {}
 
 #[derive(Serialize, Deserialize)]
 pub struct SectionData {
