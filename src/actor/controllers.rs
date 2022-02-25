@@ -481,30 +481,54 @@ impl Event {
                 use crate::db::schema::status::dsl::*;
 
                 match event.action {
-                    EventAction::Request => match event_data.get(&event.id.to_string()) {
-                        Some(data) => {
-                            diesel::update(status)
-                                .filter(id.eq(user_status_id))
-                                .set((current_event.eq(data.name.clone()), postponed.eq(0)))
-                                .execute(conn)?;
-
-                            Ok(WSResponse::EventParams(EventParams {
-                                name: data.name.clone(),
-                                description: data.description.clone(),
-                                params_delta: data.params_delta.clone(),
-                                region: data.region,
-                                reward: data.reward,
-                            }))
+                    EventAction::Request => match status
+                        .filter(id.eq(user_status_id))
+                        .select(current_event)
+                        .first::<i32>(conn)
+                    {
+                        Ok(event_id) => {
+                            if event_id == 0 {
+                                diesel::update(status)
+                                    .filter(id.eq(user_status_id))
+                                    .set((current_event.eq(1), postponed.eq(0)))
+                                    .execute(conn)?;
+                                match event_data.get("1") {
+                                    Some(data) => Ok(WSResponse::EventParams(EventParams {
+                                        id: event_id,
+                                        name: data.name.clone(),
+                                        description: data.description.clone(),
+                                        params_delta: data.params_delta.clone(),
+                                        region: data.region,
+                                        reward: data.reward,
+                                    })),
+                                    None => {
+                                        Ok(WSResponse::Error("Couldn't read the file".to_string()))
+                                    }
+                                }
+                            } else {
+                                match event_data.get(&event_id.to_string()) {
+                                    Some(data) => Ok(WSResponse::EventParams(EventParams {
+                                        id: event_id,
+                                        name: data.name.clone(),
+                                        description: data.description.clone(),
+                                        params_delta: data.params_delta.clone(),
+                                        region: data.region,
+                                        reward: data.reward,
+                                    })),
+                                    None => {
+                                        Ok(WSResponse::Error("Couldn't read the file".to_string()))
+                                    }
+                                }
+                            }
                         }
-                        None => Ok(WSResponse::Error("Couldn't read the file".to_string())),
                     },
                     EventAction::Accept => match event_data.get(&event.id.to_string()) {
                         Some(data) => {
                             let user_status =
                                 status
                                     .filter(id.eq(user_status_id))
-                                    .first::<(i32, String, i32)>(conn)?;
-                            let reward = if user_status.1 != data.name {
+                                    .first::<(i32, i32, i32)>(conn)?;
+                            let reward = if user_status.1 != event.id {
                                 return Ok(WSResponse::Error(
                                     "Cannot Accept event which wasn't requested".to_string(),
                                 ));
@@ -514,6 +538,11 @@ impl Event {
 
                             diesel::update(users.filter(email.eq(user.email)))
                                 .set(money.eq(money + reward))
+                                .execute(conn)?;
+
+                            diesel::update(status)
+                                .filter(id.eq(user_status_id))
+                                .set((current_event.eq(current_event + 1), postponed.eq(0)))
                                 .execute(conn)?;
 
                             let recvd_params = [
@@ -563,7 +592,7 @@ impl Event {
                     EventAction::Decline => {
                         diesel::update(status)
                             .filter(id.eq(user_status_id))
-                            .set((current_event.eq("None"), postponed.eq(0)))
+                            .set((current_event.eq(current_event + 1), postponed.eq(0)))
                             .execute(conn)?;
                         Ok(WSResponse::Ok("Declined".to_string()))
                     }

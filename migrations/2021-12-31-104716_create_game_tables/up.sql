@@ -7,7 +7,7 @@ CREATE TABLE regions(
 
 CREATE TABLE status(
     id SERIAL PRIMARY KEY,
-    current_event VARCHAR(255) NOT NULL,
+    current_event INT NOT NULL,
     postponed INT DEFAULT 0 NOT NULL
 );
 
