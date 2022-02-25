@@ -45,7 +45,8 @@ impl ToSql<Jsonb, Pg> for SimulatorParams {
 #[table_name = "status"]
 pub struct Status {
     pub id: i32,
-    pub current_event: String,
+    pub cur_date: i32,
+    pub current_event: i32,
     pub postponed: i32,
 }
 
