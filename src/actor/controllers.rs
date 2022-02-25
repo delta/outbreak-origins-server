@@ -68,7 +68,7 @@ impl Start {
             None => {
                 let s_id = diesel::insert_into(status)
                     .default_values()
-                    .get_result::<(i32, String, i32)>(conn)?
+                    .get_result::<(i32, i32, i32, i32)>(conn)?
                     .0;
 
                 diesel::update((users::table).filter(users::email.eq(user.email)))
@@ -150,6 +150,7 @@ impl Start {
 
                     let payload = serialize_state(&f, POPULATION);
                     Ok(WSResponse::Start(SimulatorResponse {
+                        date: 0,
                         region,
                         payload,
                         ideal_reproduction_number: start_params.ideal_reproduction_number,
@@ -179,7 +180,14 @@ impl Start {
             let f = sim.simulate(0_f64, TOTAL_DAYS);
 
             let payload = serialize_state(&f, POPULATION);
+
+            let date = status
+                .filter(id.eq(user_status_id))
+                .select(cur_date)
+                .first::<i32>(conn)?;
+
             Ok(WSResponse::Start(SimulatorResponse {
+                date,
                 region,
                 payload,
                 ideal_reproduction_number: sim_params.ideal_reproduction_number,
@@ -225,28 +233,21 @@ impl ControlMeasure {
                     Ok(val) => val,
                 };
 
+                // Set date in user status
+                let status_id = match user.status {
+                    Some(s_id) => s_id,
+                    None => return Ok(WSResponse::Error("User status not found".to_string())),
+                };
+                diesel::update(status::table)
+                    .filter(status::id.eq(status_id))
+                    .set(status::cur_date.eq(control_measure_request.cur_date))
+                    .execute(conn)?;
+
                 let control_measure_data =
                     serde_json::from_str::<HashMap<String, ControlMeasureParams>>(&contents)
                         .unwrap();
 
                 let zero_delta: &Vec<f64> = &vec![0_f64; 4];
-
-                // Checks if the user has a status attached to them
-                // If not creates one
-                // Returns status id of user
-                let status_id = match user.status {
-                    Some(status_id) => status_id,
-                    None => {
-                        let s_id = diesel::insert_into(status::table)
-                            .default_values()
-                            .get_result::<(i32, String, i32)>(conn)?
-                            .0;
-                        diesel::update((users::table).filter(users::email.eq(user.email.clone())))
-                            .set(users::status.eq(s_id))
-                            .execute(conn)?;
-                        s_id
-                    }
-                };
 
                 let active_control_measure = (regions::table)
                     .inner_join(regions_status::table)
@@ -375,8 +376,10 @@ impl ControlMeasure {
                                 &changed_params[3],
                             );
 
-                            let f =
-                                sim.simulate(0_f64, TOTAL_DAYS - control_measure_request.cur_date);
+                            let f = sim.simulate(
+                                0_f64,
+                                TOTAL_DAYS - control_measure_request.cur_date as f64,
+                            );
                             let payload = serialize_state(&f, POPULATION);
 
                             conn.transaction::<_, diesel::result::Error, _>(|| {
@@ -425,6 +428,7 @@ impl ControlMeasure {
                                 Ok(())
                             })?;
                             Ok(WSResponse::Control(SimulatorResponse {
+                                date: control_measure_request.cur_date,
                                 region: control_measure_request.region as i32,
                                 payload,
                                 ideal_reproduction_number: changed_params[0],
@@ -480,6 +484,11 @@ impl Event {
 
                 use crate::db::schema::status::dsl::*;
 
+                diesel::update(status)
+                    .filter(id.eq(user_status_id))
+                    .set(cur_date.eq(event.cur_date))
+                    .execute(conn)?;
+
                 match event.action {
                     EventAction::Request => match status
                         .filter(id.eq(user_status_id))
@@ -521,13 +530,14 @@ impl Event {
                                 }
                             }
                         }
+                        Err(_) => Ok(WSResponse::Error("Couldn't find user".to_string())),
                     },
                     EventAction::Accept => match event_data.get(&event.id.to_string()) {
                         Some(data) => {
                             let user_status =
                                 status
                                     .filter(id.eq(user_status_id))
-                                    .first::<(i32, i32, i32)>(conn)?;
+                                    .first::<(i32, i32, i32, i32)>(conn)?;
                             let reward = if user_status.1 != event.id {
                                 return Ok(WSResponse::Error(
                                     "Cannot Accept event which wasn't requested".to_string(),
@@ -575,10 +585,11 @@ impl Event {
                                 &changed_params[3],
                             );
 
-                            let f = sim.simulate(0_f64, TOTAL_DAYS - event.cur_date);
+                            let f = sim.simulate(0_f64, TOTAL_DAYS - event.cur_date as f64);
                             let payload = serialize_state(&f, POPULATION);
 
                             Ok(WSResponse::Event(SimulatorResponse {
+                                date: event.cur_date,
                                 region: data.region,
                                 payload,
                                 ideal_reproduction_number: changed_params[0],
@@ -628,12 +639,13 @@ impl Save {
         };
 
         match save_request_result {
-            Err(x) => Ok(WSResponse::Error("Couldn't parse request".to_string())),
+            Err(_) => Ok(WSResponse::Error("Couldn't parse request".to_string())),
             Ok(save_request) => {
                 let status_id = match user.status {
                     Some(status_id) => status_id,
                     None => return Ok(WSResponse::Error("Internal Server Error".to_string())),
                 };
+
                 diesel::update(regions::table)
                     .set(regions::simulation_params.eq(save_request.params))
                     .filter(regions::region_id.eq(save_request.region as i32))
