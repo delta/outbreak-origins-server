@@ -116,28 +116,42 @@ async fn verify_user(
 }
 
 #[get("/user/reset_password_email")]
-async fn reset_password_email(user: extractors::Authenticated) -> Result<HttpResponse, Error> {
-    let resp = match user.0 {
-        None => HttpResponse::Ok().status(StatusCode::UNAUTHORIZED).json(
-            response::ResetPasswordResult {
-                status: false,
-                message: "User not authenticated".to_string(),
-            },
-        ),
-        Some(x) => {
-            utils::send_reset_password_mail(&x.name, &x.email).map_err(|e| {
-                eprintln!("{}", e);
-                HttpResponse::Ok().json(response::ResetPasswordResult {
+async fn reset_password_email(
+    form: web::Json<models::ResetPasswordEmail>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, Error> {
+    let email = form.email.clone();
+    let name = web::block(move || {
+        let conn = pool.get()?;
+        controllers::get_user_email(&form.email, &conn)
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("{}", e);
+        HttpResponse::InternalServerError().finish()
+    })?;
+    let resp =
+        match name {
+            Some(n) => {
+                if let Ok(_) = utils::send_reset_password_mail(&email, &n) {
+                    HttpResponse::Ok().json(response::ResetPasswordResult {
+                        status: true,
+                        message: "Password email sent".to_string(),
+                    })
+                } else {
+                    HttpResponse::Ok().json(response::ResetPasswordResult {
+                        status: false,
+                        message: "Couldn't send email".to_string(),
+                    })
+                }
+            }
+            None => HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(
+                response::ResetPasswordResult {
                     status: false,
-                    message: "Couldn't send reset password".to_string(),
-                });
-            })?;
-            HttpResponse::Ok().json(response::ResetPasswordResult {
-                status: false,
-                message: "Password reset email sent".to_string(),
-            })
-        }
-    };
+                    message: "User not present".to_string(),
+                },
+            ),
+        };
     Ok(resp)
 }
 

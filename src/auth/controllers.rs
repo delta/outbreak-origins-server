@@ -95,3 +95,16 @@ pub fn reset_password(femail: &str, fpassword: &str, conn: &PgConnection) -> Res
         .execute(conn)?;
     Ok(())
 }
+
+pub fn get_user_email(femail: &str, conn: &PgConnection) -> Result<Option<String>, DbError> {
+    use crate::db::schema::users::dsl::*;
+    let user = users
+        .filter(email.eq(femail))
+        .first::<models::User>(conn)
+        .optional()?;
+    let name = match user {
+        Some(u) => Some(u.firstname),
+        None => None,
+    };
+    Ok(name)
+}

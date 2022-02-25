@@ -60,14 +60,3 @@ pub struct LeaderboardEntry {
     pub score: i32,
     pub money: i32,
 }
-
-#[derive(Serialize, Deserialize)]
-pub struct ResetToken {
-    pub token: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChangePassword {
-    pub jwt: String,
-    pub new_password: String,
-}
