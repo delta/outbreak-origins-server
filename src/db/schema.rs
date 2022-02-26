@@ -42,4 +42,9 @@ joinable!(regions_status -> regions (region_id));
 joinable!(regions_status -> status (status_id));
 joinable!(users -> status (status));
 
-allow_tables_to_appear_in_same_query!(regions, regions_status, status, users,);
+allow_tables_to_appear_in_same_query!(
+    regions,
+    regions_status,
+    status,
+    users,
+);

@@ -2,8 +2,8 @@ use crate::auth::extractors::Authenticated;
 use crate::db::types::PgPool;
 use crate::game::controllers::get_active_control_measures;
 use crate::game::response;
-use crate::levels::controllers::get_current_level;
-use actix_web::{get, web, Error, HttpResponse};
+use crate::levels::controllers::{get_current_level, update_current_level};
+use actix_web::{get,post, web, Error, HttpResponse};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
@@ -43,6 +43,24 @@ async fn active_control_measures(
         })
     })?;
     Ok(HttpResponse::Ok().json(acm_res))
+}
+
+#[post("/end-level")]
+async fn end_level(
+    user: Authenticated,
+    pool: web::Data<PgPool>,
+    data: web::Json<response::EndLevelRequest>,
+) -> Result<HttpResponse, Error> {
+    let mortality = 0.8;
+    let deaths = data.removed * mortality;
+    let caseload = data.infected + data.removed;
+    let moneySpent = data.moneySpent;
+    let score = caseload + deaths * 10.0 - (moneySpent * 10) as f64;
+    let _result = update_current_level(&pool.get().unwrap(), user);
+    Ok(HttpResponse::Ok().json(response::EndLevelResponse {
+        score,
+    }))
+
 }
 
 pub fn game_routes(cfg: &mut web::ServiceConfig) {
