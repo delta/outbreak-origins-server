@@ -116,18 +116,17 @@ pub fn send_reset_password_mail(name: &str, email: &str) -> Result<String, Strin
         env::var("SENDGRID_VERIFIED_EMAIL").expect("SENDGRID_VERIFIED_EMAIL must be set");
 
     let reset_jwt = create_jwt(
-        name.to_string(),
         "Reset".to_string(),
         email.to_string(),
+        name.to_string(),
         None,
     );
 
     let link = format!(
-        "http://{}/resetpassword/{}",
+        "{}/resetpassword/{}",
         env::var("FRONTEND_APP_URL").expect("FRONTEND_APP_URL must be set"),
         reset_jwt.unwrap()
     );
-    println!("{}", link);
     let msg = format!("<h1>Reset Password</h1>\n<p>Greetings from outbreak origins, use this <a href={} > link</a> to reset your password</p>", link);
 
     let mail: Mail = Mail::new()

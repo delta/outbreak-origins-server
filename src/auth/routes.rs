@@ -70,11 +70,9 @@ async fn login_user(
         eprintln!("{}", e);
         HttpResponse::InternalServerError().finish()
     })?;
-    println!("Token: {}", token);
     if is_verified {
         id.remember(token)
     }
-    println!("{:?}", status.clone());
     let resp = HttpResponse::Ok()
         .status(if is_verified {
             StatusCode::OK
@@ -115,7 +113,7 @@ async fn verify_user(
     Ok(resp)
 }
 
-#[get("/user/reset_password_email")]
+#[post("/user/reset_password_email")]
 async fn reset_password_email(
     form: web::Json<models::ResetPasswordEmail>,
     pool: web::Data<PgPool>,
@@ -128,18 +126,21 @@ async fn reset_password_email(
     .await
     .map_err(|e| {
         eprintln!("{}", e);
-        HttpResponse::InternalServerError().finish()
+        HttpResponse::InternalServerError().json(response::ResetPasswordResult {
+            status: false,
+            message: "Error getting user".to_string(),
+        })
     })?;
     let resp =
         match name {
             Some(n) => {
-                if let Ok(_) = utils::send_reset_password_mail(&email, &n) {
+                if let Ok(_) = utils::send_reset_password_mail(&n, &email) {
                     HttpResponse::Ok().json(response::ResetPasswordResult {
                         status: true,
                         message: "Password email sent".to_string(),
                     })
                 } else {
-                    HttpResponse::Ok().json(response::ResetPasswordResult {
+                    HttpResponse::InternalServerError().json(response::ResetPasswordResult {
                         status: false,
                         message: "Couldn't send email".to_string(),
                     })
