@@ -64,16 +64,17 @@ pub fn send_verify_email(token: String, email: &str, name: &str) -> Result<Strin
     dotenv().expect("Can't load environment variables");
 
     let api_key = env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
-    let from_mail = env::var("SENDGRID_VERIFIED_MAIL").expect("SENDGRID_VERIFIED_MAIL must be set");
+    let from_mail =
+        env::var("SENDGRID_VERIFIED_EMAIL").expect("SENDGRID_VERIFIED_EMAIL must be set");
 
     let link = format!(
-        "http://{}/auth/user/verify?token={}&email={}",
-        env::var("APP_URL").expect("APP_URL must be set"),
+        "http://{}/resetpassword/{}/{}",
+        env::var("FRONTEND_APP_URL").expect("FRONTEND_APP_URL must be set"),
         token,
         email
     );
 
-    let msg = format!("<h1>Click this link</h1>\n<p>Greetings from outbreak origins, use this <a href {}>link</a> to verify your email and start playing</p>", link);
+    let msg = format!("<h1>Click this link</h1>\n<p>Greetings from outbreak origins, use this <a href={}>link</a> to verify your email and start playing</p>", link);
 
     let mail: Mail = Mail::new()
         .add_to(Destination {
@@ -111,7 +112,8 @@ pub fn send_reset_password_mail(name: &str, email: &str) -> Result<String, Strin
     dotenv().expect("Can't load environment variables");
 
     let api_key = env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
-    let from_mail = env::var("SENDGRID_VERIFIED_MAIL").expect("SENDGRID_VERIFIED_MAIL must be set");
+    let from_mail =
+        env::var("SENDGRID_VERIFIED_EMAIL").expect("SENDGRID_VERIFIED_EMAIL must be set");
 
     let reset_jwt = create_jwt(
         name.to_string(),
@@ -121,12 +123,12 @@ pub fn send_reset_password_mail(name: &str, email: &str) -> Result<String, Strin
     );
 
     let link = format!(
-        "http://{}/auth/user/reset_password?jwt={}",
-        env::var("APP_URL").expect("APP_URL must be set"),
+        "http://{}/resetpassword/{}",
+        env::var("FRONTEND_APP_URL").expect("FRONTEND_APP_URL must be set"),
         reset_jwt.unwrap()
     );
-
-    let msg = format!("<h1>Reset Password</h1>\n<p>Greetings from outbreak origins, use this <a href={}>link</a> to reset your password</p>", link);
+    println!("{}", link);
+    let msg = format!("<h1>Reset Password</h1>\n<p>Greetings from outbreak origins, use this <a href={} > link</a> to reset your password</p>", link);
 
     let mail: Mail = Mail::new()
         .add_to(Destination {
