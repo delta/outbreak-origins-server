@@ -156,15 +156,7 @@ async fn reset_password_email(
 }
 
 #[post("/user/token_validate")]
-async fn token_validate(
-    user: extractors::Authenticated,
-    form: web::Json<models::ResetToken>,
-) -> Result<HttpResponse, Error> {
-    if user.0.is_none() {
-        return Ok(HttpResponse::Ok()
-            .status(StatusCode::UNAUTHORIZED)
-            .json(response::TokenValidateResult { status: false }));
-    }
+async fn token_validate(form: web::Json<models::ResetToken>) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().json(response::TokenValidateResult {
         status: utils::get_info_token(&form.token).is_ok(),
     }))
@@ -174,23 +166,8 @@ async fn token_validate(
 async fn change_password(
     pool: web::Data<PgPool>,
     form: web::Json<models::ChangePassword>,
-    user: extractors::Authenticated,
 ) -> Result<HttpResponse, Error> {
-    if user.0.is_none() {
-        return Ok(HttpResponse::Ok().status(StatusCode::UNAUTHORIZED).json(
-            response::ChangePasswordResult {
-                status: false,
-                message: "User not authenticated".to_string(),
-            },
-        ));
-    }
     if let Ok(token) = utils::get_info_token(&form.jwt) {
-        if &token.claims.email != &user.0.unwrap().email {
-            return Ok(HttpResponse::Ok().json(response::ChangePasswordResult {
-                status: false,
-                message: "Token mismatch".to_string(),
-            }));
-        }
         web::block(move || {
             let conn = pool.get()?;
             controllers::reset_password(&token.claims.email, &form.new_password, &conn)
