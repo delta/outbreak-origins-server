@@ -12,6 +12,18 @@ pub struct StartLevelError {
     pub message: String,
 }
 
+#[derive(Deserialize)]
+pub struct EndLevelRequest {
+    pub infected: f64,
+    pub removed: f64,
+    pub money_spent: i32,
+}
+
+#[derive(Serialize)]
+pub struct EndLevelResponse {
+    pub score: f64,
+}
+
 #[derive(Serialize)]
 pub struct ActiveControlMeasuresResponse {
     pub num_control_measures: usize,

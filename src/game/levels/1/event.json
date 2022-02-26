@@ -4,6 +4,7 @@
         "description": "Olympics Description",
         "params_delta": [0.2, 0.1, 0, 0],
         "region": 1,
+        "id": 1,
         "reward": 500
     },
     "2": {
@@ -11,6 +12,7 @@
         "description": "Tennis Event Description",
         "params_delta": [0.2, 0.1, 0, 0],
         "region": 2,
+        "id": 2,
         "reward": 500
     },
     "3": {
@@ -18,6 +20,7 @@
         "description": "Cricket World Cup Description",
         "params_delta": [0.2, 0.1, 0, 0],
         "region": 3,
+        "id": 3,
         "reward": 500
     },
     "4": {
@@ -25,6 +28,7 @@
         "description": "Footall World Cup Description",
         "params_delta": [0.2, 0.1, 0, 0],
         "region": 1,
+        "id": 4,
         "reward": 500
     },
     "5":{
@@ -32,6 +36,7 @@
         "description": "Local Body Election Description",
         "params_delta": [0.2, 0.1, 0, 0],
         "region": 2,
+        "id": 5,
         "reward": 0
     },
     "6":{
@@ -39,6 +44,7 @@
         "description": "Music Concert Description",
         "params_delta": [0.2, 0.1, 0, 0],
         "region": 3,
+        "id": 6,
         "reward": 1000
     },
     "7":{
@@ -46,6 +52,7 @@
         "description": "Movie Release Description",
         "params_delta": [0.2, 0.1, 0, 0],
         "region": 1,
+        "id": 7,
         "reward": 1000
     },
     "8":{
@@ -53,6 +60,7 @@
         "description": "Anime Convention Description",
         "params_delta": [0.2, 0.1, 0, 0],
         "region": 2,
+        "id": 8,
         "reward": 1000
     },
     "9":{
@@ -60,6 +68,7 @@
         "description": "hanami Description",
         "params_delta": [0.2, 0.1, 0, 0],
         "region": 3,
+        "id": 9,
         "reward": 1000
     }
 }

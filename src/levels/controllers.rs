@@ -4,7 +4,6 @@ use crate::db::types::DbError;
 use crate::levels::response;
 use diesel::prelude::*;
 
-#[allow(dead_code)]
 pub fn update_current_level(
     conn: &PgConnection,
     user: Authenticated,
