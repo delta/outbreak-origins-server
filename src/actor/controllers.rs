@@ -238,6 +238,25 @@ impl ControlMeasure {
                     Some(s_id) => s_id,
                     None => return Ok(WSResponse::Error("User status not found".to_string())),
                 };
+
+                let active_control_measure = (regions::table)
+                    .inner_join(regions_status::table)
+                    .filter(regions_status::status_id.eq(status_id))
+                    .filter(regions::region_id.eq(control_measure_request.region as i32))
+                    .select(regions::active_control_measures)
+                    .load::<models::status::ActiveControlMeasures>(conn)?;
+
+                if let Some(control) = active_control_measure[0]
+                    .0
+                    .get(&control_measure_request.name)
+                {
+                    if *control == control_measure_request.level {
+                        return Ok(WSResponse::Error(
+                            "Control measure with same level already active".to_string(),
+                        ));
+                    }
+                }
+
                 diesel::update(status::table)
                     .filter(status::id.eq(status_id))
                     .set(status::cur_date.eq(control_measure_request.cur_date))
@@ -249,12 +268,6 @@ impl ControlMeasure {
 
                 let zero_delta: &Vec<f64> = &vec![0_f64; 4];
 
-                let active_control_measure = (regions::table)
-                    .inner_join(regions_status::table)
-                    .filter(regions_status::status_id.eq(status_id))
-                    .filter(regions::region_id.eq(control_measure_request.region as i32))
-                    .select(regions::active_control_measures)
-                    .load::<models::status::ActiveControlMeasures>(conn)?;
 
                 let (mut active_control_measures, existing_delta) = if active_control_measure
                     .is_empty()
