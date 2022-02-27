@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use crate::auth::utils::{create_jwt, gen_token, send_verify_email};
+use crate::auth::utils::{create_jwt, send_verify_email};
 use crate::db::models;
 use crate::db::types::DbError;
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -13,16 +13,14 @@ pub fn insert_new_user(
     conn: &PgConnection,
 ) -> Result<(), DbError> {
     use crate::db::schema::users::dsl::*;
-    let t = gen_token();
     let new_user = models::NewUser {
         firstname: ffirstname.to_owned(),
         lastname: flastname.to_owned(),
         password: hash(fpassword.to_owned(), DEFAULT_COST)?,
         email: femail.to_owned(),
-        token: t.to_owned(),
     };
     diesel::insert_into(users).values(&new_user).execute(conn)?;
-    send_verify_email(t, femail, ffirstname).unwrap();
+    send_verify_email(femail, ffirstname).unwrap();
     Ok(())
 }
 
@@ -44,9 +42,13 @@ pub fn verify_user_by_email(
             match u.password {
                 Some(p) => {
                     if verify(fpassword.to_owned(), &p)? {
+                        let expiry = std::env::var("EXPIRY")
+                            .expect("EXPIRY")
+                            .parse::<i64>()
+                            .expect("Needed a number");
                         (
                             true,
-                            create_jwt(String::from("Login"), u.email, u.firstname, None)?,
+                            create_jwt(String::from("Login"), u.email, u.firstname, None, expiry)?,
                             String::from("Successfully authenticated"),
                         )
                     } else {
@@ -61,31 +63,12 @@ pub fn verify_user_by_email(
     Ok(is_verified)
 }
 
-pub fn verify_user_by_token(
-    femail: &str,
-    ftoken: String,
-    conn: &PgConnection,
-) -> Result<(bool, String), DbError> {
+pub fn verify_user_by_token(femail: &str, conn: &PgConnection) -> Result<(), DbError> {
     use crate::db::schema::users::dsl::*;
-    let user = users
-        .filter(email.eq(femail))
-        .first::<models::User>(conn)
-        .optional()?;
-    let is_verified = match user {
-        Some(u) => {
-            if u.token == ftoken {
-                let verified = diesel::update(users.filter(email.eq(femail)))
-                    .set(is_email_verified.eq(true))
-                    .execute(conn)?;
-                println!("{}", verified);
-                (true, String::from("Successfully authenticated"))
-            } else {
-                (false, String::from("Wrong Token"))
-            }
-        }
-        None => (false, String::from("User doesn't exist")),
-    };
-    Ok(is_verified)
+    diesel::update(users.filter(email.eq(femail)))
+        .set(is_email_verified.eq(true))
+        .execute(conn)?;
+    Ok(())
 }
 
 pub fn reset_password(femail: &str, fpassword: &str, conn: &PgConnection) -> Result<(), DbError> {

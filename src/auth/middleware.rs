@@ -113,7 +113,12 @@ where
                         false
                     })
                 {
-                    let identity = if let Ok(claims) = create_jwt(k, em, n, created_at) {
+                    let expiry = std::env::var("EXPIRY")
+                        .expect("EXPIRY")
+                        .parse::<i64>()
+                        .expect("Needed a number");
+
+                    let identity = if let Ok(claims) = create_jwt(k, em, n, created_at, expiry) {
                         Some(claims)
                     } else {
                         None

@@ -89,28 +89,30 @@ async fn login_user(
 #[get("/user/verify")]
 async fn verify_user(
     pool: web::Data<PgPool>,
-    params: web::Query<utils::UserVerify>,
+    form: web::Json<models::UserVerify>,
 ) -> Result<HttpResponse, Error> {
-    let (is_verified, status) = web::block(move || {
-        let conn = pool.get()?;
-        controllers::verify_user_by_token(params.email.as_str(), params.token.to_string(), &conn)
-    })
-    .await
-    .map_err(|e| {
-        eprintln!("{}", e);
-        HttpResponse::InternalServerError().finish()
-    })?;
-    let resp = HttpResponse::Ok()
-        .status(if is_verified {
-            StatusCode::OK
-        } else {
-            StatusCode::NOT_ACCEPTABLE
+    if let Ok(token) = utils::get_info_token(&form.jwt) {
+        web::block(move || {
+            let conn = pool.get()?;
+            controllers::verify_user_by_token(&token.claims.email, &conn)
         })
-        .json(response::AuthResult {
-            is_verified,
-            status,
-        });
-    Ok(resp)
+        .await
+        .map_err(|e| {
+            eprintln!("{}", e);
+            HttpResponse::InternalServerError().finish()
+        })?;
+        Ok(HttpResponse::Ok().json(response::VerifyUserResult {
+            status: true,
+            message: "User verified successfully".to_string(),
+        }))
+    } else {
+        Ok(HttpResponse::Ok()
+            .status(StatusCode::BAD_REQUEST)
+            .json(response::VerifyUserResult {
+                status: false,
+                message: "Invalid token".to_string(),
+            }))
+    }
 }
 
 #[post("/user/reset_password_email")]

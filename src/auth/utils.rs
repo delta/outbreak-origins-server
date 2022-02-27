@@ -5,14 +5,7 @@ use jsonwebtoken::{
     decode, encode, errors, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
 };
 use sendgrid::{Destination, Mail, SGClient};
-use serde::{Deserialize, Serialize};
 use std::env;
-
-#[derive(Serialize, Deserialize)]
-pub struct UserVerify {
-    pub email: String,
-    pub token: String,
-}
 
 // Result is from jsonwebtoken error
 pub fn create_jwt(
@@ -20,14 +13,11 @@ pub fn create_jwt(
     email: String,
     name: String,
     created_at: Option<usize>,
+    time: i64,
 ) -> errors::Result<String> {
     let jwt_secret = std::env::var("JWT_SECRET").expect("JWT_SECRET");
-    let expiry = std::env::var("EXPIRY")
-        .expect("EXPIRY")
-        .parse::<i64>()
-        .expect("Needed a number");
     let expiration = Utc::now()
-        .checked_add_signed(Duration::minutes(expiry))
+        .checked_add_signed(Duration::minutes(time))
         .expect("valid timestamp")
         .timestamp();
 
@@ -60,18 +50,31 @@ pub fn get_info_token(token: &str) -> errors::Result<TokenData<Claims>> {
     token_message
 }
 
-pub fn send_verify_email(token: String, email: &str, name: &str) -> Result<String, String> {
+pub fn send_verify_email(email: &str, name: &str) -> Result<String, String> {
     dotenv().expect("Can't load environment variables");
 
     let api_key = env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
     let from_mail =
         env::var("SENDGRID_VERIFIED_EMAIL").expect("SENDGRID_VERIFIED_EMAIL must be set");
 
+    let email_expiry = env::var("EXPIRY_EMAIL")
+        .expect("EXPIRY_EMAIL must be set")
+        .parse::<i64>()
+        .expect("Should be a number");
+
+    let verify_jwt = create_jwt(
+        "Verify".to_string(),
+        email.to_string(),
+        name.to_string(),
+        None,
+        email_expiry,
+    )
+    .unwrap();
+
     let link = format!(
-        "http://{}/resetpassword/{}/{}",
+        "{}/verifyemail/{}",
         env::var("FRONTEND_APP_URL").expect("FRONTEND_APP_URL must be set"),
-        token,
-        email
+        verify_jwt
     );
 
     let msg = format!("<h1>Click this link</h1>\n<p>Greetings from outbreak origins, use this <a href={}>link</a> to verify your email and start playing</p>", link);
@@ -96,30 +99,23 @@ pub fn send_verify_email(token: String, email: &str, name: &str) -> Result<Strin
     }
 }
 
-pub fn gen_token() -> String {
-    use rand::Rng;
-
-    let mut str = String::new();
-
-    for (_i, _) in (0..32).enumerate() {
-        str.push(rand::thread_rng().gen_range(33_u8..126_u8) as char);
-    }
-
-    str
-}
-
 pub fn send_reset_password_mail(name: &str, email: &str) -> Result<String, String> {
     dotenv().expect("Can't load environment variables");
 
     let api_key = env::var("SENDGRID_API_KEY").expect("SENDGRID_API_KEY must be set");
     let from_mail =
         env::var("SENDGRID_VERIFIED_EMAIL").expect("SENDGRID_VERIFIED_EMAIL must be set");
+    let email_expiry = env::var("EXPIRY_EMAIL")
+        .expect("EXPIRY_EMAIL must be set")
+        .parse::<i64>()
+        .expect("Should be a number");
 
     let reset_jwt = create_jwt(
         "Reset".to_string(),
         email.to_string(),
         name.to_string(),
         None,
+        email_expiry,
     );
 
     let link = format!(

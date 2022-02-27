@@ -15,3 +15,8 @@ pub struct ChangePassword {
 pub struct ResetPasswordEmail {
     pub email: String,
 }
+
+#[derive(Deserialize)]
+pub struct UserVerify {
+    pub jwt: String,
+}

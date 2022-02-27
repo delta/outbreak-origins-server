@@ -12,7 +12,6 @@ pub struct User {
     pub lastname: String,
     pub score: i32,
     pub money: i32,
-    pub token: String,
     pub is_email_verified: bool,
 }
 
@@ -23,7 +22,6 @@ pub struct NewUser {
     pub lastname: String,
     pub password: String,
     pub email: String,
-    pub token: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
@@ -35,7 +33,6 @@ pub struct TestUser {
     pub email: String,
     pub score: i32,
     pub money: i32,
-    pub token: String,
     pub is_email_verified: bool,
 }
 

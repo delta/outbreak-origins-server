@@ -33,3 +33,9 @@ pub struct ChangePasswordResult {
     pub message: String,
     pub status: bool,
 }
+
+#[derive(Debug, Clone, Serialize)]
+pub struct VerifyUserResult {
+    pub status: bool,
+    pub message: String,
+}
