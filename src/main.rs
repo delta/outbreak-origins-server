@@ -18,6 +18,7 @@ mod game;
 mod leaderboard;
 mod levels;
 mod middleware;
+mod playerstats;
 mod tests;
 
 use crate::middleware as common_middleware;
@@ -57,6 +58,7 @@ async fn main() -> std::io::Result<()> {
             .configure(levels::routes::level_select_routes)
             .configure(game::routes::game_routes)
             .configure(leaderboard::routes::leaderboard_routes)
+            .configure(playerstats::routes::stats_routes)
     })
     .bind(&app_url)?
     .run()
