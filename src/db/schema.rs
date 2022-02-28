@@ -42,6 +42,7 @@ table! {
         lastname -> Text,
         score -> Int4,
         money -> Int4,
+        is_email_verified -> Bool,
     }
 }
 

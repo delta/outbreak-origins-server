@@ -1,4 +1,4 @@
-use crate::auth::{controllers, extractors, response};
+use crate::auth::{controllers, extractors, response, utils};
 use crate::db::models;
 use crate::db::types::PgPool;
 use actix_identity::Identity;
@@ -7,7 +7,7 @@ use actix_web::{get, http::StatusCode, post, web, Error, HttpResponse};
 #[post("/user/register")]
 async fn register_user(
     pool: web::Data<PgPool>,
-    form: web::Json<models::NewUser>,
+    form: web::Json<models::RegisterUser>,
 ) -> Result<HttpResponse, Error> {
     web::block(move || {
         let conn = pool.get()?;
@@ -70,7 +70,6 @@ async fn login_user(
         eprintln!("{}", e);
         HttpResponse::InternalServerError().finish()
     })?;
-    println!("Token: {}", token);
     if is_verified {
         id.remember(token)
     }
@@ -87,12 +86,142 @@ async fn login_user(
     Ok(resp)
 }
 
+#[post("/user/verify")]
+async fn verify_user(
+    pool: web::Data<PgPool>,
+    form: web::Json<models::UserVerify>,
+) -> Result<HttpResponse, Error> {
+    if let Ok(token) = utils::get_info_token(&form.jwt) {
+        if token.claims.kind != "Verify".to_string() {
+            return Ok(HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(
+                response::VerifyUserResult {
+                    status: false,
+                    message: "Invalid token".to_string(),
+                },
+            ));
+        }
+        web::block(move || {
+            let conn = pool.get()?;
+            controllers::verify_user_by_token(&token.claims.email, &conn)
+        })
+        .await
+        .map_err(|e| {
+            eprintln!("{}", e);
+            HttpResponse::InternalServerError().finish()
+        })?;
+        Ok(HttpResponse::Ok().json(response::VerifyUserResult {
+            status: true,
+            message: "User verified successfully".to_string(),
+        }))
+    } else {
+        Ok(HttpResponse::Ok()
+            .status(StatusCode::BAD_REQUEST)
+            .json(response::VerifyUserResult {
+                status: false,
+                message: "Invalid token".to_string(),
+            }))
+    }
+}
+
+#[post("/user/reset_password_email")]
+async fn reset_password_email(
+    form: web::Json<models::ResetPasswordEmail>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, Error> {
+    let email = form.email.clone();
+    let name = web::block(move || {
+        let conn = pool.get()?;
+        controllers::get_user_name(&form.email, &conn)
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("{}", e);
+        HttpResponse::InternalServerError().json(response::ResetPasswordResult {
+            status: false,
+            message: "Error getting user".to_string(),
+        })
+    })?;
+    let resp =
+        match name {
+            Some(n) => {
+                if let Ok(_) = utils::send_reset_password_mail(&n, &email) {
+                    HttpResponse::Ok().json(response::ResetPasswordResult {
+                        status: true,
+                        message: "Password email sent".to_string(),
+                    })
+                } else {
+                    HttpResponse::InternalServerError().json(response::ResetPasswordResult {
+                        status: false,
+                        message: "Couldn't send email".to_string(),
+                    })
+                }
+            }
+            None => HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(
+                response::ResetPasswordResult {
+                    status: false,
+                    message: "User not present".to_string(),
+                },
+            ),
+        };
+    Ok(resp)
+}
+
+#[post("/user/token_validate")]
+async fn token_validate(form: web::Json<models::ResetToken>) -> Result<HttpResponse, Error> {
+    if let Ok(info) = utils::get_info_token(&form.token) {
+        Ok(HttpResponse::Ok().json(response::TokenValidateResult {
+            status: (info.claims.kind == "Reset".to_string()),
+        }))
+    } else {
+        Ok(HttpResponse::Ok().json(response::TokenValidateResult { status: false }))
+    }
+}
+
+#[post("/user/change_password")]
+async fn change_password(
+    pool: web::Data<PgPool>,
+    form: web::Json<models::ChangePassword>,
+) -> Result<HttpResponse, Error> {
+    if let Ok(token) = utils::get_info_token(&form.jwt) {
+        if token.claims.kind != "Reset".to_string() {
+            return Ok(HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(
+                response::ChangePasswordResult {
+                    status: true,
+                    message: "Invalid token".to_string(),
+                },
+            ));
+        }
+        web::block(move || {
+            let conn = pool.get()?;
+            controllers::reset_password(&token.claims.email, &form.new_password, &conn)
+        })
+        .await
+        .map_err(|e| {
+            eprintln!("{}", e);
+            HttpResponse::InternalServerError().finish()
+        })?;
+        Ok(HttpResponse::Ok().json(response::ChangePasswordResult {
+            status: true,
+            message: "Password successfully changed".to_string(),
+        }))
+    } else {
+        Ok(HttpResponse::Ok().json(response::ChangePasswordResult {
+            status: false,
+            message: "Invalid Token".to_string(),
+        }))
+    }
+}
+
 pub fn auth_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/auth")
             .service(register_user)
             .service(logout_user)
             .service(login_user)
-            .service(check_auth),
+            .service(check_auth)
+            .service(verify_user)
+            .service(reset_password_email)
+            .service(token_validate)
+            .service(change_password),
     );
 }

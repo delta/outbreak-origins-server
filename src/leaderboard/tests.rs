@@ -6,7 +6,7 @@ use crate::leaderboard::routes;
 async fn test_get_leaderboard() {
     use crate::db::models;
     use crate::leaderboard::response::LeaderboardResponse;
-    use crate::tests::utils::insert_test_user;
+    use crate::tests::utils::test_utils::insert_test_user;
     use actix_web::{test, App};
     use test_manager::TestDbManager;
 
@@ -24,29 +24,32 @@ async fn test_get_leaderboard() {
         .expect("Couldn't get test DB connection");
 
     let test_users = vec![
-        models::NewUser {
+        models::TestUser {
             firstname: "User".to_string(),
             lastname: "A".to_string(),
             password: "".to_string(),
             email: "usera@email.com".to_string(),
             score: 10,
             money: 100,
+            is_email_verified: true,
         },
-        models::NewUser {
+        models::TestUser {
             firstname: "User".to_string(),
             lastname: "B".to_string(),
             password: "".to_string(),
             email: "userb@email.com".to_string(),
             score: 50,
             money: 25,
+            is_email_verified: true,
         },
-        models::NewUser {
+        models::TestUser {
             firstname: "User".to_string(),
             lastname: "C".to_string(),
             password: "".to_string(),
             email: "userc@email.com".to_string(),
             score: 0,
             money: 0,
+            is_email_verified: true,
         },
     ];
 
