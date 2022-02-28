@@ -92,7 +92,7 @@ async fn verify_user(
     form: web::Json<models::UserVerify>,
 ) -> Result<HttpResponse, Error> {
     if let Ok(token) = utils::get_info_token(&form.jwt) {
-        if token.claims.kind != "Verify".to_string() {
+        if token.claims.kind != *"Verify" {
             return Ok(HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(
                 response::VerifyUserResult {
                     status: false,
@@ -144,7 +144,7 @@ async fn reset_password_email(
     let resp =
         match name {
             Some(n) => {
-                if let Ok(_) = utils::send_reset_password_mail(&n, &email) {
+                if utils::send_reset_password_mail(&n, &email).is_ok() {
                     HttpResponse::Ok().json(response::ResetPasswordResult {
                         status: true,
                         message: "Password email sent".to_string(),
@@ -170,7 +170,7 @@ async fn reset_password_email(
 async fn token_validate(form: web::Json<models::ResetToken>) -> Result<HttpResponse, Error> {
     if let Ok(info) = utils::get_info_token(&form.token) {
         Ok(HttpResponse::Ok().json(response::TokenValidateResult {
-            status: (info.claims.kind == "Reset".to_string()),
+            status: (info.claims.kind == *"Reset"),
         }))
     } else {
         Ok(HttpResponse::Ok().json(response::TokenValidateResult { status: false }))
@@ -183,7 +183,7 @@ async fn change_password(
     form: web::Json<models::ChangePassword>,
 ) -> Result<HttpResponse, Error> {
     if let Ok(token) = utils::get_info_token(&form.jwt) {
-        if token.claims.kind != "Reset".to_string() {
+        if token.claims.kind != *"Reset" {
             return Ok(HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(
                 response::ChangePasswordResult {
                     status: true,
