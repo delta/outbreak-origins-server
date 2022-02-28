@@ -79,7 +79,7 @@ pub fn reset_password(femail: &str, fpassword: &str, conn: &PgConnection) -> Res
     Ok(())
 }
 
-pub fn get_user_email(femail: &str, conn: &PgConnection) -> Result<Option<String>, DbError> {
+pub fn get_user_name(femail: &str, conn: &PgConnection) -> Result<Option<String>, DbError> {
     use crate::db::schema::users::dsl::*;
     let user = users
         .filter(email.eq(femail))

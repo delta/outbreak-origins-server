@@ -92,6 +92,14 @@ async fn verify_user(
     form: web::Json<models::UserVerify>,
 ) -> Result<HttpResponse, Error> {
     if let Ok(token) = utils::get_info_token(&form.jwt) {
+        if token.claims.kind != "Verify".to_string() {
+            return Ok(HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(
+                response::VerifyUserResult {
+                    status: false,
+                    message: "Invalid token".to_string(),
+                },
+            ));
+        }
         web::block(move || {
             let conn = pool.get()?;
             controllers::verify_user_by_token(&token.claims.email, &conn)
@@ -123,7 +131,7 @@ async fn reset_password_email(
     let email = form.email.clone();
     let name = web::block(move || {
         let conn = pool.get()?;
-        controllers::get_user_email(&form.email, &conn)
+        controllers::get_user_name(&form.email, &conn)
     })
     .await
     .map_err(|e| {
@@ -160,9 +168,13 @@ async fn reset_password_email(
 
 #[post("/user/token_validate")]
 async fn token_validate(form: web::Json<models::ResetToken>) -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().json(response::TokenValidateResult {
-        status: utils::get_info_token(&form.token).is_ok(),
-    }))
+    if let Ok(info) = utils::get_info_token(&form.token) {
+        Ok(HttpResponse::Ok().json(response::TokenValidateResult {
+            status: (info.claims.kind == "Reset".to_string()),
+        }))
+    } else {
+        Ok(HttpResponse::Ok().json(response::TokenValidateResult { status: false }))
+    }
 }
 
 #[post("/user/change_password")]
@@ -171,6 +183,14 @@ async fn change_password(
     form: web::Json<models::ChangePassword>,
 ) -> Result<HttpResponse, Error> {
     if let Ok(token) = utils::get_info_token(&form.jwt) {
+        if token.claims.kind != "Reset".to_string() {
+            return Ok(HttpResponse::Ok().status(StatusCode::BAD_REQUEST).json(
+                response::ChangePasswordResult {
+                    status: true,
+                    message: "Invalid token".to_string(),
+                },
+            ));
+        }
         web::block(move || {
             let conn = pool.get()?;
             controllers::reset_password(&token.claims.email, &form.new_password, &conn)

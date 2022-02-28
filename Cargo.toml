@@ -30,4 +30,3 @@ actix-rt = "2.6.0"
 test_manager = { path = "test-manager" }
 strum_macros = "0.23.1"
 sendgrid = "0.17.4"
-rand = "0.8.4"

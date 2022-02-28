@@ -6,7 +6,7 @@ use crate::leaderboard::routes;
 async fn test_get_leaderboard() {
     use crate::db::models;
     use crate::leaderboard::response::LeaderboardResponse;
-    use crate::tests::utils::insert_test_user;
+    use crate::tests::utils::test_utils::insert_test_user;
     use actix_web::{test, App};
     use test_manager::TestDbManager;
 

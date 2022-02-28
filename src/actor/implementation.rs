@@ -51,26 +51,24 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
 
                     let data = serde_json::from_str::<InitParams>(&contents).unwrap();
 
-                    for n in data.section_data.iter() {
-                        // Instance of Simulator
-                        let sim = Simulator::new(
-                            &n.init_params.susceptible,
-                            &n.init_params.exposed,
-                            &n.init_params.infectious,
-                            &n.init_params.removed,
-                            &n.init_params.current_reproduction_number,
-                            &n.init_params.ideal_reproduction_number,
-                            &n.init_params.compliance_factor,
-                            &n.init_params.recovery_rate,
-                            &n.init_params.infection_rate,
-                        );
+                    // Instance of Simulator
+                    let sim = Simulator::new(
+                        &data.section_data[0].init_params.susceptible,
+                        &data.section_data[0].init_params.exposed,
+                        &data.section_data[0].init_params.infectious,
+                        &data.section_data[0].init_params.removed,
+                        &data.section_data[0].init_params.current_reproduction_number,
+                        &data.section_data[0].init_params.ideal_reproduction_number,
+                        &data.section_data[0].init_params.compliance_factor,
+                        &data.section_data[0].init_params.recovery_rate,
+                        &data.section_data[0].init_params.infection_rate,
+                    );
 
-                        let f = sim.simulate(0_f64, 2_f64);
+                    let f = sim.simulate(0_f64, 2_f64);
 
-                        // serilising the data
-                        let payload = serialize_state(&f, n.population);
-                        ctx.text(WSResponse::Start(StartResponse { payload }).stringify());
-                    }
+                    // serilising the data
+                    let payload = serialize_state(&f, data.section_data[0].population);
+                    ctx.text(WSResponse::Start(StartResponse { payload }).stringify())
                 }
             }
             _ => ctx.stop(),

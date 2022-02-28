@@ -1767,7 +1767,6 @@ dependencies = [
  "jsonwebtoken",
  "r2d2",
  "r2d2-diesel",
- "rand 0.8.4",
  "sendgrid",
  "serde",
  "serde_json",
