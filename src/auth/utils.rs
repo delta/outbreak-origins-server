@@ -72,7 +72,7 @@ pub fn send_verify_email(email: &str, name: &str) -> Result<String, String> {
     .unwrap();
 
     let link = format!(
-        "{}/verifyemail/{}",
+        "{}/userverify/{}",
         env::var("FRONTEND_APP_URL").expect("FRONTEND_APP_URL must be set"),
         verify_jwt
     );

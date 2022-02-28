@@ -86,7 +86,7 @@ async fn login_user(
     Ok(resp)
 }
 
-#[get("/user/verify")]
+#[post("/user/verify")]
 async fn verify_user(
     pool: web::Data<PgPool>,
     form: web::Json<models::UserVerify>,
