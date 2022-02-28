@@ -16,7 +16,7 @@ pub fn insert_new_user(
     let new_user = models::NewUser {
         firstname: ffirstname.to_owned(),
         lastname: flastname.to_owned(),
-        password: hash(fpassword.to_owned(), DEFAULT_COST)?,
+        password: hash(fpassword, DEFAULT_COST)?,
         email: femail.to_owned(),
     };
     diesel::insert_into(users).values(&new_user).execute(conn)?;
@@ -41,7 +41,7 @@ pub fn verify_user_by_email(
             }
             match u.password {
                 Some(p) => {
-                    if verify(fpassword.to_owned(), &p)? {
+                    if verify(fpassword, &p)? {
                         let expiry = std::env::var("EXPIRY")
                             .expect("EXPIRY")
                             .parse::<i64>()
@@ -74,7 +74,7 @@ pub fn verify_user_by_token(femail: &str, conn: &PgConnection) -> Result<(), DbE
 pub fn reset_password(femail: &str, fpassword: &str, conn: &PgConnection) -> Result<(), DbError> {
     use crate::db::schema::users::dsl::*;
     diesel::update(users.filter(email.eq(femail)))
-        .set(password.eq(hash(fpassword.to_owned(), DEFAULT_COST).unwrap()))
+        .set(password.eq(hash(fpassword, DEFAULT_COST).unwrap()))
         .execute(conn)?;
     Ok(())
 }

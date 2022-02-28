@@ -1,4 +1,3 @@
-pub mod controllers;
-pub mod response;
+mod controllers;
+mod response;
 pub mod routes;
-pub mod tests;
