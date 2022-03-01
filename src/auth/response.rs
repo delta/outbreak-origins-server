@@ -39,3 +39,8 @@ pub struct VerifyUserResult {
     pub status: bool,
     pub message: String,
 }
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ResendVerificationResult {
+    pub message: String,
+}

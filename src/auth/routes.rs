@@ -214,6 +214,29 @@ async fn change_password(
     }
 }
 
+#[post("/user/resend_verification")]
+async fn resend_verification(
+    pool: web::Data<PgPool>,
+    form: web::Json<models::ResendVerification>,
+) -> Result<HttpResponse, Error> {
+    let (status, message) = web::block(move || {
+        let conn = pool.get()?;
+        controllers::resend_verification_email(&form.email, &conn)
+    })
+    .await
+    .map_err(|e| {
+        eprintln!("{}", e);
+        HttpResponse::InternalServerError().finish()
+    })?;
+    Ok(HttpResponse::Ok()
+        .status(if status {
+            StatusCode::OK
+        } else {
+            StatusCode::BAD_REQUEST
+        })
+        .json(response::ResendVerificationResult { message }))
+}
+
 pub fn auth_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/auth")
