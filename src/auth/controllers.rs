@@ -91,3 +91,24 @@ pub fn get_user_name(femail: &str, conn: &PgConnection) -> Result<Option<String>
     };
     Ok(name)
 }
+
+pub fn resend_verification_email(
+    femail: &str,
+    conn: &PgConnection,
+) -> Result<(bool, String), DbError> {
+    use crate::db::schema::users::dsl::*;
+    let user = users
+        .filter(email.eq(femail))
+        .first::<models::User>(conn)
+        .optional()?;
+    let (is_verified, fname) = match user {
+        Some(u) => (u.is_email_verified, u.firstname),
+        None => return Ok((false, "User not found".to_string())),
+    };
+    if is_verified {
+        Ok((false, "User already verified".to_string()))
+    } else {
+        send_verify_email(femail, &fname).unwrap();
+        Ok((true, "Verification Email resent".to_string()))
+    }
+}

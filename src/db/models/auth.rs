@@ -20,3 +20,8 @@ pub struct ResetPasswordEmail {
 pub struct UserVerify {
     pub jwt: String,
 }
+
+#[derive(Deserialize)]
+pub struct ResendVerification {
+    pub email: String,
+}
