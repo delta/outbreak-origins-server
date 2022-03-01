@@ -68,7 +68,6 @@ where
                         Some(claim.claims.name.clone()),
                         Some(claim.claims.exp),
                         Some(claim.claims.created_at),
-                        Some(claim.claims.level),
                         Some(claim.claims),
                     )
                 } else {
