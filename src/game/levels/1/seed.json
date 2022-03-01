@@ -1,5 +1,9 @@
 {
 	"num_sections": 3,
+	"initial_coordinates": {
+		"lng": 138.2529,
+		"lat": 36.2048
+	},
 	"section_data": {
 		"1": {
 			"points": [
