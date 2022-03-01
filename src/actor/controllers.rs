@@ -15,7 +15,7 @@ use std::fs;
 use std::path::Path;
 use virus_simulator::Simulator;
 
-const POPULATION: f64 = 10000000.0;
+const POPULATION: f64 = 5000.0;
 const TOTAL_DAYS: f64 = 700.0;
 const EVENT_POSTPONE_PENALTY: i32 = 100;
 
