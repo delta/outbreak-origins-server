@@ -14,7 +14,6 @@ pub struct LogoutResult {
 #[derive(Debug, Clone, Serialize)]
 pub struct CheckAuthResult {
     pub status: bool,
-    pub level: Option<i32>,
     pub email: Option<String>,
 }
 

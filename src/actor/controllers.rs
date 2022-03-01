@@ -268,7 +268,6 @@ impl ControlMeasure {
 
                 let zero_delta: &Vec<f64> = &vec![0_f64; 4];
 
-
                 let (mut active_control_measures, existing_delta) = if active_control_measure
                     .is_empty()
                 {
