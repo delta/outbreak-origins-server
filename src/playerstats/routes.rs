@@ -48,5 +48,5 @@ pub async fn money(pool: web::Data<PgPool>, user: Authenticated) -> Result<HttpR
 }
 
 pub fn stats_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/user/api/").service(score).service(money));
+    cfg.service(web::scope("/user/api/stats").service(score).service(money));
 }

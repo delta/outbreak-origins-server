@@ -46,9 +46,9 @@ async fn main() -> std::io::Result<()> {
             .service(fs::Files::new("/events", "static/").index_file("index.html"))
             .configure(auth::routes::auth_routes)
             .configure(levels::routes::level_select_routes)
+            .configure(playerstats::routes::stats_routes)
             .configure(game::routes::game_routes)
             .configure(leaderboard::routes::leaderboard_routes)
-            .configure(playerstats::routes::stats_routes)
     })
     .bind(&app_url)?
     .run()
