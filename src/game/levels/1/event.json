@@ -1,5 +1,5 @@
 {
-    "1" : {
+    "1": {
         "name": "Olympics",
         "description": "Olympics Description",
         "params_delta": [0.2, 0.1, 0, 0],
@@ -31,7 +31,7 @@
         "id": 4,
         "reward": 500
     },
-    "5":{
+    "5": {
         "name": "Election",
         "description": "Local Body Election Description",
         "params_delta": [0.2, 0.1, 0, 0],
@@ -39,7 +39,7 @@
         "id": 5,
         "reward": 0
     },
-    "6":{
+    "6": {
         "name": "Music Concert",
         "description": "Music Concert Description",
         "params_delta": [0.2, 0.1, 0, 0],
@@ -47,7 +47,7 @@
         "id": 6,
         "reward": 1000
     },
-    "7":{
+    "7": {
         "name": "Movie Release",
         "description": "Movie Release Description",
         "params_delta": [0.2, 0.1, 0, 0],
@@ -55,7 +55,7 @@
         "id": 7,
         "reward": 1000
     },
-    "8":{
+    "8": {
         "name": "Anime Convention",
         "description": "Anime Convention Description",
         "params_delta": [0.2, 0.1, 0, 0],
@@ -63,7 +63,7 @@
         "id": 8,
         "reward": 1000
     },
-    "9":{
+    "9": {
         "name": "Hanami",
         "description": "hanami Description",
         "params_delta": [0.2, 0.1, 0, 0],
