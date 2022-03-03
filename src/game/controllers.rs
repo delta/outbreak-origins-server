@@ -5,7 +5,7 @@ use crate::db::schema::{regions, regions_status, users};
 use crate::db::types::DbError;
 use crate::game::response;
 use crate::game::response::ActiveControlMeasuresResponse;
-use crate::game::utils;
+
 use diesel::prelude::*;
 use diesel::PgConnection;
 
@@ -28,11 +28,13 @@ pub fn get_active_control_measures(
                     .load::<i32>(conn)?,
             ),
         )
-        .select((regions::id, regions::active_control_measures))
+        .select((regions::region_id, regions::active_control_measures))
         .load::<(i32, ActiveControlMeasures)>(conn)?;
     let acm = ActiveControlMeasuresResponse {
-        num_control_measures: acm_tups.len(),
-        active_control_measures: utils::get_acm_map_from_db_res(&acm_tups),
+        active_control_measures: acm_tups
+            .into_iter()
+            .map(|(x, y)| (x.to_string(), y))
+            .collect(),
     };
     Ok(acm)
 }

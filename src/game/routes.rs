@@ -38,7 +38,6 @@ async fn active_control_measures(
     let acm_res = get_active_control_measures(&pool.get().unwrap(), user).map_err(|e| {
         eprintln!("{}", e);
         HttpResponse::InternalServerError().json(response::ActiveControlMeasuresResponse {
-            num_control_measures: 0,
             active_control_measures: HashMap::new(),
         })
     })?;

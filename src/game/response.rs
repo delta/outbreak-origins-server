@@ -26,6 +26,5 @@ pub struct EndLevelResponse {
 
 #[derive(Serialize)]
 pub struct ActiveControlMeasuresResponse {
-    pub num_control_measures: usize,
-    pub active_control_measures: HashMap<String, Vec<ActiveControlMeasures>>,
+    pub active_control_measures: HashMap<String, ActiveControlMeasures>,
 }
