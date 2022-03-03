@@ -11,7 +11,7 @@ pub struct NewsResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct EventReel {
+pub struct EventNews {
     pub announcement: String,
     pub accept: String,
     pub reject: String,
@@ -26,8 +26,8 @@ pub struct EventMessage {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum Read {
-    Cm(String),
-    Eventm(EventReel),
+    ControlNews(String),
+    EventNews(EventNews),
 }
 
 #[derive(Serialize)]
@@ -42,7 +42,7 @@ pub struct SimulatorResponse {
 }
 
 #[derive(Serialize)]
-pub struct ControlResponse {
+pub struct ActionResponse {
     pub simulation_data: SimulatorResponse,
     pub description: String,
 }
@@ -58,8 +58,8 @@ enum_str!(
         // News(NewsEvent),
         Seed(String),
         Start(SimulatorResponse),
-        Control(ControlResponse),
-        Event(ControlResponse),
+        Control(ActionResponse),
+        Event(ActionResponse),
         EventParams(EventParams),
         Error(String),
         Ok(String),

@@ -1,7 +1,7 @@
 use crate::actor::events::types::{
-    ControlMeasure, ControlMeasureAction, ControlMeasureParams, ControlResponse, Event,
-    EventAction, EventMessage, EventParams, Level, Read, Save, Seed, SimulatorParams,
-    SimulatorResponse, Start, StartParams, WSResponse,
+    ActionResponse, ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventAction,
+    EventMessage, EventParams, Level, Read, Save, Seed, SimulatorParams, SimulatorResponse, Start,
+    StartParams, WSResponse,
 };
 use crate::db::models;
 use diesel::prelude::*;
@@ -21,12 +21,12 @@ const TOTAL_DAYS: f64 = 700.0;
 const EVENT_POSTPONE_PENALTY: i32 = 100;
 const NO_OF_EVENTS: i32 = 9;
 
-pub fn des(key: String, level: i32) -> Read {
+pub fn get_description(key: String, level: i32) -> Read {
     let file = format!("src/game/levels/{}/description.json", level);
     let path = Path::new(&file);
     let contents = fs::read_to_string(&path).expect("Something went wrong reading the file");
     let obj = serde_json::from_str::<HashMap<String, Read>>(&contents).unwrap();
-    obj.get(&key.to_string()).expect("Invalid key").clone()
+    obj.get(&key).expect("Invalid key").clone()
 }
 
 impl EventMessage {
@@ -55,14 +55,14 @@ impl EventMessage {
                 .first::<(i32, i32, i32, i32)>(conn)?;
             stat = user_status.1;
         } else {
-            stat = stat + NO_OF_EVENTS;
+            stat += NO_OF_EVENTS;
         }
-        let x = &des(stat.to_string(), user.curlevel);
-        let x = match x {
-            Read::Eventm(x) => x.announcement.to_string(),
-            Read::Cm(x) => x.to_string(),
+        let event_message_data = &get_description(stat.to_string(), user.curlevel);
+        let event_message = match event_message_data {
+            Read::EventNews(event_message_data) => event_message_data.announcement.to_string(),
+            Read::ControlNews(event_message_data) => event_message_data.to_string(),
         };
-        Ok(WSResponse::Ok(x.to_string()))
+        Ok(WSResponse::Ok(event_message))
     }
 }
 
@@ -274,10 +274,11 @@ impl ControlMeasure {
             // If valid request
             Ok(control_measure_request) => {
                 // Reads data from control measure file
-                let x = &control_measure_request.name.to_string();
-                let x = &des(x.to_string(), user.curlevel);
-                let x = match x {
-                    Read::Cm(x) => x.to_string(),
+                let control_measure_name = &control_measure_request.name.to_string();
+                let control_measure_name =
+                    &get_description(control_measure_name.to_string(), user.curlevel);
+                let control_measure_message = match control_measure_name {
+                    Read::ControlNews(x) => x.to_string(),
                     _ => "Invalid control measure".to_string(),
                 };
                 let file = format!("src/game/levels/{}/control.json", user.curlevel);
@@ -493,7 +494,7 @@ impl ControlMeasure {
                                         .execute(conn)?;
                                 Ok(())
                             })?;
-                            Ok(WSResponse::Control(ControlResponse {
+                            Ok(WSResponse::Control(ActionResponse {
                                 simulation_data: SimulatorResponse {
                                     date: control_measure_request.cur_date,
                                     region: control_measure_request.region as i32,
@@ -503,7 +504,7 @@ impl ControlMeasure {
                                     recovery_rate: changed_params[2],
                                     infection_rate: changed_params[3],
                                 },
-                                description: x.to_string(),
+                                description: control_measure_message,
                             }))
                         }
                         None => Ok(WSResponse::Error("Level not found".to_string())),
@@ -602,9 +603,10 @@ impl Event {
                         Err(_) => Ok(WSResponse::Error("Couldn't find user".to_string())),
                     },
                     EventAction::Accept => {
-                        let x = &des(event.id.to_string(), user.curlevel);
-                        let x = match x {
-                            Read::Eventm(x) => x.accept.to_string(),
+                        let event_accept_message =
+                            &get_description(event.id.to_string(), user.curlevel);
+                        let event_accept_message = match event_accept_message {
+                            Read::EventNews(x) => x.accept.to_string(),
                             _ => "Invalid Event".to_string(),
                         };
                         match event_data.get(&event.id.to_string()) {
@@ -663,8 +665,8 @@ impl Event {
                                 let f = sim.simulate(0_f64, TOTAL_DAYS - event.cur_date as f64);
                                 let payload = serialize_state(&f, POPULATION);
 
-                                Ok(WSResponse::Event(ControlResponse {
-                                    description: x,
+                                Ok(WSResponse::Event(ActionResponse {
+                                    description: event_accept_message,
                                     simulation_data: SimulatorResponse {
                                         date: event.cur_date,
                                         region: data.region,
@@ -680,28 +682,30 @@ impl Event {
                         }
                     }
                     EventAction::Decline => {
-                        let x = &des(event.id.to_string(), user.curlevel);
-                        let x = match x {
-                            Read::Cm(_) => "Invalid Event".to_string(),
-                            Read::Eventm(x) => x.reject.to_string(),
+                        let event_decline_message =
+                            &get_description(event.id.to_string(), user.curlevel);
+                        let event_decline_message = match event_decline_message {
+                            Read::ControlNews(_) => "Invalid Event".to_string(),
+                            Read::EventNews(x) => x.reject.to_string(),
                         };
                         diesel::update(status)
                             .filter(id.eq(user_status_id))
                             .set((current_event.eq(current_event + 1), postponed.eq(0)))
                             .execute(conn)?;
-                        Ok(WSResponse::Ok(x.to_string()))
+                        Ok(WSResponse::Ok(event_decline_message))
                     }
                     EventAction::Postpone => {
-                        let x = &des(event.id.to_string(), user.curlevel);
-                        let x = match x {
-                            Read::Cm(_) => "Invalid Event".to_string(),
-                            Read::Eventm(x) => x.postpone.to_string(),
+                        let event_postpone_message =
+                            &get_description(event.id.to_string(), user.curlevel);
+                        let event_postpone_message = match event_postpone_message {
+                            Read::ControlNews(_) => "Invalid Event".to_string(),
+                            Read::EventNews(x) => x.postpone.to_string(),
                         };
                         diesel::update(status)
                             .filter(id.eq(user_status_id))
                             .set(postponed.eq(postponed + 1))
                             .execute(conn)?;
-                        Ok(WSResponse::Ok(x.to_string()))
+                        Ok(WSResponse::Ok(event_postpone_message))
                     }
                 }
             }
