@@ -1,6 +1,6 @@
 use crate::actor::events::types::{
     ActionResponse, ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventAction,
-    EventMessage, EventParams, Level, Read, Save, Seed, SimulatorParams, SimulatorResponse, Start,
+    EventParams, Level, NewsRequest, Read, Save, Seed, SimulatorParams, SimulatorResponse, Start,
     StartParams, WSResponse,
 };
 use crate::db::models;
@@ -29,7 +29,7 @@ pub fn get_description(key: String, level: i32) -> Read {
     obj.get(&key).expect("Invalid key").clone()
 }
 
-impl EventMessage {
+impl NewsRequest {
     pub fn handle(
         payload: String,
         user: &extractors::Authenticated,
@@ -47,17 +47,17 @@ impl EventMessage {
             None => return Ok(WSResponse::Error("User not found".to_string())),
             Some(y) => y,
         };
-        let mut stat = serde_json::from_str::<Level>(&payload).unwrap().id;
+        let mut event_id = serde_json::from_str::<Level>(&payload).unwrap().id;
         let user_status_id = user.status.unwrap();
-        if stat == 0 {
+        if event_id == 0 {
             let user_status = status
                 .filter(id.eq(user_status_id))
                 .first::<(i32, i32, i32, i32)>(conn)?;
-            stat = user_status.1;
+            event_id = user_status.1 + 1;
         } else {
-            stat += NO_OF_EVENTS;
+            event_id += NO_OF_EVENTS;
         }
-        let event_message_data = &get_description(stat.to_string(), user.curlevel);
+        let event_message_data = &get_description(event_id.to_string(), user.curlevel);
         let event_message = match event_message_data {
             Read::EventNews(event_message_data) => event_message_data.announcement.to_string(),
             Read::ControlNews(event_message_data) => event_message_data.to_string(),
@@ -228,12 +228,11 @@ impl Start {
 
             let payload = serialize_state(&f, POPULATION);
 
-            let _date = status
+            let date = status
                 .filter(id.eq(user_status_id))
                 .select(cur_date)
                 .first::<i32>(conn)?;
 
-            let date: i32 = 0;
             Ok(WSResponse::Start(SimulatorResponse {
                 date,
                 region,

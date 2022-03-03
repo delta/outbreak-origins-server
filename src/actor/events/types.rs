@@ -19,7 +19,7 @@ pub struct EventNews {
 }
 
 #[derive(Serialize)]
-pub struct EventMessage {
+pub struct NewsRequest {
     pub message: String,
 }
 

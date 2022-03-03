@@ -1,7 +1,7 @@
 use crate::db::types::PgPool;
 
 use crate::actor::events::types::{
-    ControlMeasure, Event, EventMessage, Save, Seed, Start, WSRequest, WSResponse,
+    ControlMeasure, Event, NewsRequest, Save, Seed, Start, WSRequest, WSResponse,
 };
 
 use crate::db::types::DbError;
@@ -67,8 +67,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                     }
                     "Event" => ws_response(Event::handle(request.payload, &self.user, &conn)),
                     "Save" => ws_response(Save::handle(request.payload, &self.user, &conn)),
-                    "EventMessage" => {
-                        ws_response(EventMessage::handle(request.payload, &self.user, &conn))
+                    "NewsRequest" => {
+                        ws_response(NewsRequest::handle(request.payload, &self.user, &conn))
                     }
                     _ => WSResponse::Error("Invalid request sent".to_string()),
                 };
