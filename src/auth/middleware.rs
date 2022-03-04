@@ -57,6 +57,7 @@ where
         let is_logout = req.path().contains("logout");
 
         let identity = req.get_identity();
+        let is_logged_in = identity.is_some();
         let (user, iden) = match identity {
             None => (None, None),
             Some(iden) => (
@@ -74,7 +75,7 @@ where
 
         Box::pin(async move {
             let mut res = fut.await?;
-            if !is_logout {
+            if !is_logout && is_logged_in {
                 cookie_policy().to_response(iden, true, &mut res).await?;
             }
             Ok(res)
