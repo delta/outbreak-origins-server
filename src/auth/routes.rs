@@ -247,6 +247,7 @@ pub fn auth_routes(cfg: &mut web::ServiceConfig) {
             .service(verify_user)
             .service(reset_password_email)
             .service(token_validate)
-            .service(change_password),
+            .service(change_password)
+            .service(resend_verification),
     );
 }
