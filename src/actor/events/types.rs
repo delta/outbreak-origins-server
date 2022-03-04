@@ -10,6 +10,26 @@ pub struct NewsResponse {
     pub content: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct EventNews {
+    pub announcement: String,
+    pub accept: String,
+    pub reject: String,
+    pub postpone: String,
+}
+
+#[derive(Serialize)]
+pub struct NewsRequest {
+    pub message: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(untagged)]
+pub enum Read {
+    ControlNews(String),
+    EventNews(EventNews),
+}
+
 #[derive(Serialize)]
 pub struct SimulatorResponse {
     pub date: i32,
@@ -19,6 +39,12 @@ pub struct SimulatorResponse {
     pub compliance_factor: f64,
     pub recovery_rate: f64,
     pub infection_rate: f64,
+}
+
+#[derive(Serialize)]
+pub struct ActionResponse {
+    pub simulation_data: SimulatorResponse,
+    pub description: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -32,8 +58,8 @@ enum_str!(
         // News(NewsEvent),
         Seed(String),
         Start(SimulatorResponse),
-        Control(SimulatorResponse),
-        Event(SimulatorResponse),
+        Control(ActionResponse),
+        Event(ActionResponse),
         EventParams(EventParams),
         Error(String),
         Ok(String),
@@ -56,6 +82,12 @@ pub struct SimulatorParams {
 
 #[derive(Deserialize)]
 pub struct Start {
+    pub region: i32,
+}
+
+#[derive(Deserialize)]
+pub struct Level {
+    pub id: i32,
     pub region: i32,
 }
 

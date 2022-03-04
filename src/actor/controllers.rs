@@ -1,6 +1,7 @@
 use crate::actor::events::types::{
-    ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventAction, EventParams,
-    Save, Seed, SimulatorParams, SimulatorResponse, Start, StartParams, WSResponse,
+    ActionResponse, ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventAction,
+    EventParams, Level, NewsRequest, Read, Save, Seed, SimulatorParams, SimulatorResponse, Start,
+    StartParams, WSResponse,
 };
 use crate::db::models;
 use diesel::prelude::*;
@@ -18,6 +19,52 @@ use virus_simulator::Simulator;
 const POPULATION: f64 = 5000.0;
 const TOTAL_DAYS: f64 = 700.0;
 const EVENT_POSTPONE_PENALTY: i32 = 100;
+const NO_OF_EVENTS: i32 = 9;
+
+pub fn get_description(key: String, level: i32) -> Read {
+    let file = format!("src/game/levels/{}/description.json", level);
+    let path = Path::new(&file);
+    let contents = fs::read_to_string(&path).expect("Something went wrong reading the file");
+    let obj = serde_json::from_str::<HashMap<String, Read>>(&contents).unwrap();
+    obj.get(&key).expect("Invalid key").clone()
+}
+
+impl NewsRequest {
+    pub fn handle(
+        payload: String,
+        user: &extractors::Authenticated,
+        conn: &PgConnection,
+    ) -> Result<WSResponse, DbError> {
+        use crate::db::schema::status::dsl::*;
+        use crate::db::schema::users::dsl::{email, users};
+        let user = user.0.as_ref().unwrap();
+        let user = users
+            .filter(email.eq(user.email.clone()))
+            .first::<models::User>(conn)
+            .optional()?;
+
+        let user = match user {
+            None => return Ok(WSResponse::Error("User not found".to_string())),
+            Some(y) => y,
+        };
+        let mut event_id = serde_json::from_str::<Level>(&payload).unwrap().id;
+        let user_status_id = user.status.unwrap();
+        if event_id == 0 {
+            let user_status = status
+                .filter(id.eq(user_status_id))
+                .first::<(i32, i32, i32, i32)>(conn)?;
+            event_id = user_status.1 + 1;
+        } else {
+            event_id += NO_OF_EVENTS;
+        }
+        let event_message_data = &get_description(event_id.to_string(), user.curlevel);
+        let event_message = match event_message_data {
+            Read::EventNews(event_message_data) => event_message_data.announcement.to_string(),
+            Read::ControlNews(event_message_data) => event_message_data.to_string(),
+        };
+        Ok(WSResponse::Ok(event_message))
+    }
+}
 
 impl Seed {
     pub fn handle(
@@ -226,6 +273,13 @@ impl ControlMeasure {
             // If valid request
             Ok(control_measure_request) => {
                 // Reads data from control measure file
+                let control_measure_name = &control_measure_request.name.to_string();
+                let control_measure_name =
+                    &get_description(control_measure_name.to_string(), user.curlevel);
+                let control_measure_message = match control_measure_name {
+                    Read::ControlNews(x) => x.to_string(),
+                    _ => "Invalid control measure".to_string(),
+                };
                 let file = format!("src/game/levels/{}/control.json", user.curlevel);
                 let path = Path::new(&file);
                 let contents = match fs::read_to_string(&path) {
@@ -439,14 +493,17 @@ impl ControlMeasure {
                                         .execute(conn)?;
                                 Ok(())
                             })?;
-                            Ok(WSResponse::Control(SimulatorResponse {
-                                date: control_measure_request.cur_date,
-                                region: control_measure_request.region as i32,
-                                payload,
-                                ideal_reproduction_number: changed_params[0],
-                                compliance_factor: changed_params[1],
-                                recovery_rate: changed_params[2],
-                                infection_rate: changed_params[3],
+                            Ok(WSResponse::Control(ActionResponse {
+                                simulation_data: SimulatorResponse {
+                                    date: control_measure_request.cur_date,
+                                    region: control_measure_request.region as i32,
+                                    payload,
+                                    ideal_reproduction_number: changed_params[0],
+                                    compliance_factor: changed_params[1],
+                                    recovery_rate: changed_params[2],
+                                    infection_rate: changed_params[3],
+                                },
+                                description: control_measure_message,
                             }))
                         }
                         None => Ok(WSResponse::Error("Level not found".to_string())),
@@ -544,87 +601,110 @@ impl Event {
                         }
                         Err(_) => Ok(WSResponse::Error("Couldn't find user".to_string())),
                     },
-                    EventAction::Accept => match event_data.get(&event.id.to_string()) {
-                        Some(data) => {
-                            let user_status =
-                                status
+                    EventAction::Accept => {
+                        let event_accept_message =
+                            &get_description(event.id.to_string(), user.curlevel);
+                        let event_accept_message = match event_accept_message {
+                            Read::EventNews(x) => x.accept.to_string(),
+                            _ => "Invalid Event".to_string(),
+                        };
+                        match event_data.get(&event.id.to_string()) {
+                            Some(data) => {
+                                let user_status =
+                                    status
+                                        .filter(id.eq(user_status_id))
+                                        .first::<(i32, i32, i32, i32)>(conn)?;
+                                let reward = if user_status.1 != event.id {
+                                    return Ok(WSResponse::Error(
+                                        "Cannot Accept event which wasn't requested".to_string(),
+                                    ));
+                                } else {
+                                    data.reward - user_status.2 * EVENT_POSTPONE_PENALTY
+                                };
+
+                                diesel::update(users.filter(email.eq(user.email)))
+                                    .set(money.eq(money + reward))
+                                    .execute(conn)?;
+
+                                diesel::update(status)
                                     .filter(id.eq(user_status_id))
-                                    .first::<(i32, i32, i32, i32)>(conn)?;
-                            let reward = if user_status.1 != event.id {
-                                return Ok(WSResponse::Error(
-                                    "Cannot Accept event which wasn't requested".to_string(),
-                                ));
-                            } else {
-                                data.reward - user_status.2 * EVENT_POSTPONE_PENALTY
-                            };
+                                    .set((current_event.eq(current_event + 1), postponed.eq(0)))
+                                    .execute(conn)?;
 
-                            diesel::update(users.filter(email.eq(user.email)))
-                                .set(money.eq(money + reward))
-                                .execute(conn)?;
+                                let recvd_params = [
+                                    event.params.ideal_reproduction_number,
+                                    event.params.compliance_factor,
+                                    event.params.recovery_rate,
+                                    event.params.infection_rate,
+                                ];
 
-                            diesel::update(status)
-                                .filter(id.eq(user_status_id))
-                                .set((current_event.eq(current_event + 1), postponed.eq(0)))
-                                .execute(conn)?;
+                                let changed_params: Vec<f64> = data
+                                    .params_delta
+                                    .iter()
+                                    .zip(recvd_params.iter())
+                                    .map(|(&a, &b)| a + b)
+                                    .collect();
 
-                            let recvd_params = [
-                                event.params.ideal_reproduction_number,
-                                event.params.compliance_factor,
-                                event.params.recovery_rate,
-                                event.params.infection_rate,
-                            ];
+                                let susceptible = event.params.susceptible / POPULATION;
+                                let exposed = event.params.exposed / POPULATION;
+                                let infectious = event.params.infectious / POPULATION;
+                                let removed = event.params.removed / POPULATION;
+                                let sim = Simulator::new(
+                                    &susceptible,
+                                    &exposed,
+                                    &infectious,
+                                    &removed,
+                                    &event.params.current_reproduction_number,
+                                    &changed_params[0],
+                                    &changed_params[1],
+                                    &changed_params[2],
+                                    &changed_params[3],
+                                );
 
-                            let changed_params: Vec<f64> = data
-                                .params_delta
-                                .iter()
-                                .zip(recvd_params.iter())
-                                .map(|(&a, &b)| a + b)
-                                .collect();
+                                let f = sim.simulate(0_f64, TOTAL_DAYS - event.cur_date as f64);
+                                let payload = serialize_state(&f, POPULATION);
 
-                            let susceptible = event.params.susceptible / POPULATION;
-                            let exposed = event.params.exposed / POPULATION;
-                            let infectious = event.params.infectious / POPULATION;
-                            let removed = event.params.removed / POPULATION;
-                            let sim = Simulator::new(
-                                &susceptible,
-                                &exposed,
-                                &infectious,
-                                &removed,
-                                &event.params.current_reproduction_number,
-                                &changed_params[0],
-                                &changed_params[1],
-                                &changed_params[2],
-                                &changed_params[3],
-                            );
-
-                            let f = sim.simulate(0_f64, TOTAL_DAYS - event.cur_date as f64);
-                            let payload = serialize_state(&f, POPULATION);
-
-                            Ok(WSResponse::Event(SimulatorResponse {
-                                date: event.cur_date,
-                                region: data.region,
-                                payload,
-                                ideal_reproduction_number: changed_params[0],
-                                compliance_factor: changed_params[1],
-                                recovery_rate: changed_params[2],
-                                infection_rate: changed_params[3],
-                            }))
+                                Ok(WSResponse::Event(ActionResponse {
+                                    description: event_accept_message,
+                                    simulation_data: SimulatorResponse {
+                                        date: event.cur_date,
+                                        region: data.region,
+                                        payload,
+                                        ideal_reproduction_number: changed_params[0],
+                                        compliance_factor: changed_params[1],
+                                        recovery_rate: changed_params[2],
+                                        infection_rate: changed_params[3],
+                                    },
+                                }))
+                            }
+                            None => Ok(WSResponse::Error("Invalid request sent".to_string())),
                         }
-                        None => Ok(WSResponse::Error("Invalid request sent".to_string())),
-                    },
+                    }
                     EventAction::Decline => {
+                        let event_decline_message =
+                            &get_description(event.id.to_string(), user.curlevel);
+                        let event_decline_message = match event_decline_message {
+                            Read::ControlNews(_) => "Invalid Event".to_string(),
+                            Read::EventNews(x) => x.reject.to_string(),
+                        };
                         diesel::update(status)
                             .filter(id.eq(user_status_id))
                             .set((current_event.eq(current_event + 1), postponed.eq(0)))
                             .execute(conn)?;
-                        Ok(WSResponse::Ok("Declined".to_string()))
+                        Ok(WSResponse::Ok(event_decline_message))
                     }
                     EventAction::Postpone => {
+                        let event_postpone_message =
+                            &get_description(event.id.to_string(), user.curlevel);
+                        let event_postpone_message = match event_postpone_message {
+                            Read::ControlNews(_) => "Invalid Event".to_string(),
+                            Read::EventNews(x) => x.postpone.to_string(),
+                        };
                         diesel::update(status)
                             .filter(id.eq(user_status_id))
                             .set(postponed.eq(postponed + 1))
                             .execute(conn)?;
-                        Ok(WSResponse::Ok("Postponed".to_string()))
+                        Ok(WSResponse::Ok(event_postpone_message))
                     }
                 }
             }
