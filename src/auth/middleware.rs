@@ -53,7 +53,8 @@ where
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
-        println!("You requested: {}", req.path());
+        // Kinda hacky
+        let is_logout = req.path().contains("logout");
 
         let identity = req.get_identity();
         let (user, iden) = match identity {
@@ -73,7 +74,9 @@ where
 
         Box::pin(async move {
             let mut res = fut.await?;
-            cookie_policy().to_response(iden, true, &mut res).await?;
+            if !is_logout {
+                cookie_policy().to_response(iden, true, &mut res).await?;
+            }
             Ok(res)
         })
     }
