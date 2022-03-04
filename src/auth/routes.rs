@@ -71,6 +71,8 @@ async fn login_user(
         eprintln!("{}", e);
         HttpResponse::InternalServerError().finish()
     })?;
+    println!("Token: {}", token);
+    println!("Is Verified: {}", is_verified);
     if is_verified {
         id.remember(token)
     }
