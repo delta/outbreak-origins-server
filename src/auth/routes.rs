@@ -29,7 +29,7 @@ async fn register_user(
     })?;
     Ok(HttpResponse::Ok().json(response::AuthResult {
         is_verified: true,
-        status: String::from("Created successfully"),
+        status: String::from("User created and Verification Email sent!"),
     }))
 }
 
