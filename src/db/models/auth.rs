@@ -1,4 +1,10 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Identity {
+    pub name: String,
+    pub email: String,
+}
 
 #[derive(Deserialize)]
 pub struct ResetToken {

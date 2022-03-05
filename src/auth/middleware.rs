@@ -1,7 +1,5 @@
-use crate::auth::utils::{create_jwt, get_info_token};
-use crate::db::models::Claims;
+use crate::db::models;
 use actix_web::HttpMessage;
-use chrono::{Duration, TimeZone, Utc};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -55,81 +53,31 @@ where
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
-        println!("You requested: {}", req.path());
+        // Kinda hacky
+        let is_logout = req.path().contains("logout");
 
         let identity = req.get_identity();
-        let (kind, email, name, exp, created_at, user) = match identity {
-            None => (None, None, None, None, None, None),
-            Some(iden) => {
-                if let Ok(claim) = get_info_token(&iden) {
-                    (
-                        Some(claim.claims.kind.clone()),
-                        Some(claim.claims.email.clone()),
-                        Some(claim.claims.name.clone()),
-                        Some(claim.claims.exp),
-                        Some(claim.claims.created_at),
-                        Some(claim.claims),
-                    )
+        let is_logged_in = identity.is_some();
+        let (user, iden) = match identity {
+            None => (None, None),
+            Some(iden) => (
+                if let Ok(claim) = serde_json::from_str(&iden) {
+                    Some(claim)
                 } else {
-                    (None, None, None, None, None, None)
-                }
-            }
+                    None
+                },
+                Some(iden),
+            ),
         };
-        req.extensions_mut().insert::<Option<Claims>>(user);
+        req.extensions_mut()
+            .insert::<Option<models::Identity>>(user);
         let fut = self.service.call(req);
 
         Box::pin(async move {
             let mut res = fut.await?;
-            if let (Some(k), Some(em), Some(n), Some(e), Some(cr)) =
-                (kind, email, name, exp, created_at)
-            {
-                if &k != "Login" {
-                    return Ok(res);
-                }
-                let expiry = std::env::var("EXPIRY")
-                    .expect("EXPIRY")
-                    .parse::<i64>()
-                    .expect("Needed a number");
-                let max_age = std::env::var("MAX_AGE")
-                    .expect("MAX_AGE")
-                    .parse::<i64>()
-                    .expect("Needed a number");
-                let add = if expiry < 2 {
-                    Duration::seconds(expiry * 30)
-                } else {
-                    Duration::hours(expiry / 2)
-                };
-                if Utc::now()
-                    .checked_add_signed(add)
-                    .expect("invalid timestamp")
-                    .timestamp() as usize
-                    >= e
-                    && (if let Some(dur) = Utc
-                        .timestamp(cr as i64, 0)
-                        .checked_add_signed(Duration::minutes(max_age))
-                    {
-                        dur > Utc::now()
-                    } else {
-                        false
-                    })
-                {
-                    let expiry = std::env::var("EXPIRY")
-                        .expect("EXPIRY")
-                        .parse::<i64>()
-                        .expect("Needed a number");
-
-                    let identity = if let Ok(claims) = create_jwt(k, em, n, created_at, expiry) {
-                        Some(claims)
-                    } else {
-                        None
-                    };
-                    cookie_policy()
-                        .to_response(identity, true, &mut res)
-                        .await?;
-                }
+            if !is_logout && is_logged_in {
+                cookie_policy().to_response(iden, true, &mut res).await?;
             }
-
-            println!("Response");
             Ok(res)
         })
     }
@@ -140,6 +88,7 @@ pub fn cookie_policy() -> CookieIdentityPolicy {
         .expect("EXPIRY")
         .parse::<i64>()
         .expect("Needed a number for expiry");
+    // let app_url = std::env::var("APP_URL").expect("APP_URL must be present");
     let cookie_key = std::env::var("COOKIE_KEY").expect("COOKIE_KEY");
     CookieIdentityPolicy::new(cookie_key.as_ref()) // <- construct cookie policy
         .domain("localhost")
