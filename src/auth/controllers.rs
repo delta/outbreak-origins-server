@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 
-use crate::auth::utils::{create_jwt, send_verify_email};
+use crate::auth::utils::send_verify_email;
 use crate::db::models;
 use crate::db::types::DbError;
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -42,13 +42,13 @@ pub fn verify_user_by_email(
             match u.password {
                 Some(p) => {
                     if verify(fpassword, &p)? {
-                        let expiry = std::env::var("EXPIRY")
-                            .expect("EXPIRY")
-                            .parse::<i64>()
-                            .expect("Needed a number");
                         (
                             true,
-                            create_jwt(String::from("Login"), u.email, u.firstname, None, expiry)?,
+                            serde_json::to_string(&models::Identity {
+                                name: u.firstname,
+                                email: u.email,
+                            })
+                            .unwrap(),
                             String::from("Successfully authenticated"),
                         )
                     } else {

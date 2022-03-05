@@ -1,11 +1,10 @@
 use crate::auth::error;
-use crate::db::models::Claims;
+use crate::db::models;
 use actix_web::FromRequest;
 use futures::future::{ready, Ready};
 
-pub type AuthenticationInfo = Option<Claims>;
+pub type AuthenticationInfo = Option<models::Identity>;
 
-#[derive(Debug)]
 pub struct Authenticated(pub AuthenticationInfo);
 
 impl FromRequest for Authenticated {
