@@ -88,10 +88,10 @@ pub fn cookie_policy() -> CookieIdentityPolicy {
         .expect("EXPIRY")
         .parse::<i64>()
         .expect("Needed a number for expiry");
-    // let app_url = std::env::var("APP_URL").expect("APP_URL must be present");
+    let hosted_url = std::env::var("HOSTED_URL").expect("HOSTED_URL must be present");
     let cookie_key = std::env::var("COOKIE_KEY").expect("COOKIE_KEY");
     CookieIdentityPolicy::new(cookie_key.as_ref()) // <- construct cookie policy
-        .domain("localhost")
+        .domain(hosted_url)
         .name("OutBreakAuth")
         .path("/")
         .max_age(expiry * 60 * 60)

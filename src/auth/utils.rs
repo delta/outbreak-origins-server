@@ -77,7 +77,7 @@ pub fn send_verify_email(email: &str, name: &str) -> Result<String, String> {
         verify_jwt
     );
 
-    let msg = format!("<h1>Click this link</h1>\n<p>Greetings from outbreak origins, use this <a href={}>link</a> to verify your email and start playing</p>", link);
+    let msg = format!("<h1>Verify User</h1>\n<p>Greetings from outbreak origins, use this <a href={}>link</a> to verify your email and start playing\nIncase you are unable to see the link, copy this into your browser\n{}</p>", link, link);
 
     let mail: Mail = Mail::new()
         .add_to(Destination {
@@ -123,7 +123,7 @@ pub fn send_reset_password_mail(name: &str, email: &str) -> Result<String, Strin
         env::var("FRONTEND_APP_URL").expect("FRONTEND_APP_URL must be set"),
         reset_jwt.unwrap()
     );
-    let msg = format!("<h1>Reset Password</h1>\n<p>Greetings from outbreak origins, use this <a href={} > link</a> to reset your password</p>", link);
+    let msg = format!("<h1>Reset Password</h1>\n<p>Greetings from outbreak origins, use this <a href={} > link</a> to reset your password.\nIncase you are unable to see the link, copy this into your browser\n{}</p>", link, link);
 
     let mail: Mail = Mail::new()
         .add_to(Destination {
