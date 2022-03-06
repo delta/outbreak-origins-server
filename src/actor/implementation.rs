@@ -28,7 +28,34 @@ impl Actor for Game {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
+        use crate::db::schema::users::dsl::*;
+        use diesel::prelude::*;
+
+        println!("Started");
+        let conn = self.pool.get().expect("Couldn't get DB connection");
+
+        let auth_user = self.user.0.as_ref().unwrap();
+        diesel::update(users.filter(email.eq(auth_user.email.clone())))
+            .set(is_active.eq(true))
+            .execute(&*conn)
+            .expect("Couldn't set user status");
         self.heartbeat(ctx);
+    }
+
+    fn stopped(&mut self, ctx: &mut Self::Context) {
+        use crate::db::schema::users::dsl::*;
+        use diesel::prelude::*;
+        println!("Stopped");
+
+        let conn = self.pool.get().expect("Couldn't get DB connection");
+
+        let auth_user = self.user.0.as_ref().unwrap();
+        diesel::update(users.filter(email.eq(auth_user.email.clone())))
+            .set(is_active.eq(false))
+            .execute(&*conn)
+            .expect("Couldn't set user status");
+
+        ctx.stop();
     }
 }
 
@@ -83,15 +110,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
 
 impl Game {
     pub fn new(conn_pool: web::Data<PgPool>, user: extractors::Authenticated) -> Self {
-        use crate::db::schema::users::dsl::*;
-        use diesel::prelude::*;
-        let conn = conn_pool.get().expect("Couldn't get DB connection");
-
-        let auth_user = user.0.as_ref().unwrap();
-        diesel::update(users.filter(email.eq(auth_user.email.clone())))
-            .set(is_active.eq(true))
-            .execute(&*conn)
-            .expect("Couldn't set user status");
         Self {
             heartbeat: Instant::now(),
             pool: conn_pool,
@@ -105,16 +123,6 @@ impl Game {
             if Instant::now().duration_since(act.heartbeat) > CLIENT_TIMEOUT {
                 // heartbeat timed out
                 println!("Websocket Client heartbeat failed, disconnecting!");
-                use crate::db::schema::users::dsl::*;
-                use diesel::prelude::*;
-
-                let conn = act.pool.get().expect("Couldn't get DB connection");
-
-                let auth_user = act.user.0.as_ref().unwrap();
-                diesel::update(users.filter(email.eq(auth_user.email.clone())))
-                    .set(is_active.eq(false))
-                    .execute(&*conn)
-                    .expect("Couldn't set user status");
 
                 // stop actor
                 ctx.stop();
