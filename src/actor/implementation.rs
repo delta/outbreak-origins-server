@@ -28,7 +28,34 @@ impl Actor for Game {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
+        use crate::db::schema::users::dsl::*;
+        use diesel::prelude::*;
+
+        println!("Started");
+        let conn = self.pool.get().expect("Couldn't get DB connection");
+
+        let auth_user = self.user.0.as_ref().unwrap();
+        diesel::update(users.filter(email.eq(auth_user.email.clone())))
+            .set(is_active.eq(true))
+            .execute(&*conn)
+            .expect("Couldn't set user status");
         self.heartbeat(ctx);
+    }
+
+    fn stopped(&mut self, ctx: &mut Self::Context) {
+        use crate::db::schema::users::dsl::*;
+        use diesel::prelude::*;
+        println!("Stopped");
+
+        let conn = self.pool.get().expect("Couldn't get DB connection");
+
+        let auth_user = self.user.0.as_ref().unwrap();
+        diesel::update(users.filter(email.eq(auth_user.email.clone())))
+            .set(is_active.eq(false))
+            .execute(&*conn)
+            .expect("Couldn't set user status");
+
+        ctx.stop();
     }
 }
 
@@ -43,10 +70,12 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
     fn handle(&mut self, item: Result<Message, ProtocolError>, ctx: &mut Self::Context) {
         match item {
             Ok(Message::Ping(item)) => {
+                println!("ping");
                 self.heartbeat = Instant::now();
                 ctx.pong(&item);
             }
             Ok(Message::Pong(_)) => {
+                println!("pong");
                 self.heartbeat = Instant::now();
             }
             Ok(Message::Text(text)) => {

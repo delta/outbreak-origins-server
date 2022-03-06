@@ -14,6 +14,7 @@ pub struct User {
     pub score: i32,
     pub money: i32,
     pub is_email_verified: bool,
+    pub is_active: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
