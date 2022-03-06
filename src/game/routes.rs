@@ -51,10 +51,22 @@ async fn end_level(
     data: web::Json<response::EndLevelRequest>,
 ) -> Result<HttpResponse, Error> {
     let mortality = 0.8;
-    let deaths = data.removed * mortality;
-    let caseload = data.infected + data.removed;
-    let money_spent = data.money_spent;
-    let score = caseload + deaths * 10.0 - (money_spent * 10) as f64;
+    let population = 15000.0;
+    let start_money = 1000.0;
+    
+    let deaths = (data.removed * mortality) / population;
+    let caseload = (data.infected + data.removed) / (2.0 * population);
+    let money_left = data.money_left / start_money;
+    
+    let deaths_weight = -4.0; // negative cuz more deaths means less score
+    let caseload_weight = -1.5; // same with caseload
+    let money_weight = 2.0; // positive cuz more money remaining means better score
+    let score_scale = 1000.0;
+    
+    let performance_factor = deaths * deaths_weight + caseload * caseload_weight + money_left * money_weight; // will be between [0 and sum_of_weights]
+
+    let score = score_scale * (10.0 + performance_factor);
+
     let _result = update_current_level(&pool.get().unwrap(), user);
     Ok(HttpResponse::Ok().json(response::EndLevelResponse { score }))
 }
@@ -63,6 +75,7 @@ pub fn game_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/user/api/")
             .service(start_level)
-            .service(active_control_measures),
+            .service(active_control_measures)
+            .service(end_level),
     );
 }
