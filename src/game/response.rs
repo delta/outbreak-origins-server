@@ -16,7 +16,7 @@ pub struct StartLevelError {
 pub struct EndLevelRequest {
     pub infected: f64,
     pub removed: f64,
-    pub money_spent: i32,
+    pub money_left: f64,
 }
 
 #[derive(Serialize)]
