@@ -7,7 +7,7 @@ use crate::db::models;
 use diesel::prelude::*;
 use diesel::PgConnection;
 
-use crate::actor::utils::serialize_state;
+use crate::actor::utils::{serialize_state, simulate};
 use crate::auth::extractors;
 
 use crate::db::types::DbError;
@@ -182,6 +182,7 @@ impl Start {
                         .set(regions::simulation_params.eq(start_params))
                         .execute(conn)?;
 
+                    // simulate(&start_params)
                     let sim = Simulator::new(
                         &start_params.susceptible,
                         &start_params.exposed,
@@ -273,9 +274,8 @@ impl ControlMeasure {
             // If valid request
             Ok(control_measure_request) => {
                 // Reads data from control measure file
-                let control_measure_name = &control_measure_request.name.to_string();
                 let control_measure_name =
-                    &get_description(control_measure_name.to_string(), user.curlevel);
+                    &get_description(control_measure_request.name.clone(), user.curlevel);
                 let control_measure_message = match control_measure_name {
                     Read::ControlNews(x) => x.to_string(),
                     _ => "Invalid control measure".to_string(),
@@ -394,7 +394,7 @@ impl ControlMeasure {
                                         *x = control_measure_request.level;
                                     } else {
                                         active_control_measures.insert(
-                                            control_measure_request.name,
+                                            control_measure_request.name.clone(),
                                             control_measure_request.level,
                                         );
                                     }
@@ -425,28 +425,11 @@ impl ControlMeasure {
                                 .map(|(&a, &b)| a + b)
                                 .collect();
 
-                            let susceptible =
-                                control_measure_request.params.susceptible / POPULATION;
-                            let exposed = control_measure_request.params.exposed / POPULATION;
-                            let infectious = control_measure_request.params.infectious / POPULATION;
-                            let removed = control_measure_request.params.removed / POPULATION;
-                            let sim = Simulator::new(
-                                &susceptible,
-                                &exposed,
-                                &infectious,
-                                &removed,
-                                &control_measure_request.params.current_reproduction_number,
-                                &changed_params[0],
-                                &changed_params[1],
-                                &changed_params[2],
-                                &changed_params[3],
+                            let (payload, susceptible, exposed, infectious, removed) = simulate(
+                                &control_measure_request.params,
+                                &changed_params,
+                                control_measure_request.cur_date,
                             );
-
-                            let f = sim.simulate(
-                                0_f64,
-                                TOTAL_DAYS - control_measure_request.cur_date as f64,
-                            );
-                            let payload = serialize_state(&f, POPULATION);
 
                             conn.transaction::<_, diesel::result::Error, _>(|| {
                                 diesel::update(regions::table)
@@ -622,15 +605,6 @@ impl Event {
                                     data.reward - user_status.2 * EVENT_POSTPONE_PENALTY
                                 };
 
-                                diesel::update(users.filter(email.eq(user.email)))
-                                    .set(money.eq(money + reward))
-                                    .execute(conn)?;
-
-                                diesel::update(status)
-                                    .filter(id.eq(user_status_id))
-                                    .set((current_event.eq(current_event + 1), postponed.eq(0)))
-                                    .execute(conn)?;
-
                                 let recvd_params = [
                                     event.params.ideal_reproduction_number,
                                     event.params.compliance_factor,
@@ -645,24 +619,51 @@ impl Event {
                                     .map(|(&a, &b)| a + b)
                                     .collect();
 
-                                let susceptible = event.params.susceptible / POPULATION;
-                                let exposed = event.params.exposed / POPULATION;
-                                let infectious = event.params.infectious / POPULATION;
-                                let removed = event.params.removed / POPULATION;
-                                let sim = Simulator::new(
-                                    &susceptible,
-                                    &exposed,
-                                    &infectious,
-                                    &removed,
-                                    &event.params.current_reproduction_number,
-                                    &changed_params[0],
-                                    &changed_params[1],
-                                    &changed_params[2],
-                                    &changed_params[3],
-                                );
+                                let (payload, susceptible, exposed, infectious, removed) =
+                                    simulate(&event.params, &changed_params, event.cur_date);
 
-                                let f = sim.simulate(0_f64, TOTAL_DAYS - event.cur_date as f64);
-                                let payload = serialize_state(&f, POPULATION);
+                                conn.transaction::<_, diesel::result::Error, _>(|| {
+                                    use crate::db::schema::{
+                                        regions, regions_status, status, users,
+                                    };
+                                    diesel::update(regions::table)
+                                        .filter(
+                                            regions::id.eq_any(
+                                                regions_status::table
+                                                    .filter(
+                                                        regions_status::status_id
+                                                            .eq(user_status_id),
+                                                    )
+                                                    .select(regions_status::region_id)
+                                                    .load::<i32>(conn)?,
+                                            ),
+                                        )
+                                        .filter(regions::region_id.eq(data.region))
+                                        .set(regions::simulation_params.eq(SimulatorParams {
+                                            susceptible,
+                                            exposed,
+                                            infectious,
+                                            removed,
+                                            current_reproduction_number:
+                                                event.params.current_reproduction_number,
+                                            ideal_reproduction_number: changed_params[0],
+                                            compliance_factor: changed_params[1],
+                                            recovery_rate: changed_params[2],
+                                            infection_rate: changed_params[3],
+                                        }))
+                                        .execute(conn)?;
+
+                                    diesel::update(users::table)
+                                        .filter(email.eq(user.email))
+                                        .set(money.eq(money + reward))
+                                        .execute(conn)?;
+
+                                    diesel::update(status::table)
+                                        .filter(id.eq(user_status_id))
+                                        .set((current_event.eq(current_event + 1), postponed.eq(0)))
+                                        .execute(conn)?;
+                                    Ok(())
+                                })?;
 
                                 Ok(WSResponse::Event(ActionResponse {
                                     description: event_accept_message,
