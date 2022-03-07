@@ -3,8 +3,10 @@ use crate::db::types::PgPool;
 use crate::leaderboard::controllers::get_leaderboard;
 use crate::leaderboard::response::LeaderboardResponse;
 use actix_web::{get, web, Error, HttpResponse};
+use tracing::instrument;
 
 #[get("/{pg_num}")]
+#[instrument(skip(pool))]
 pub async fn leaderboard(
     web::Path(pg_num): web::Path<u32>,
     pool: web::Data<PgPool>,
