@@ -1,8 +1,11 @@
+use diesel::sql_types::Text;
+use diesel::sql_types::{BigInt, Integer};
 use serde::{Deserialize, Serialize};
 
 use crate::db::schema::users;
 
-#[derive(Identifiable, Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Identifiable, Debug, Clone, Serialize, Deserialize, QueryableByName, Queryable)]
+#[table_name = "users"]
 pub struct User {
     pub id: i32,
     pub password: Option<String>,
@@ -52,10 +55,14 @@ pub struct LoginUser {
     pub email: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Queryable)]
+#[derive(Debug, Clone, Serialize, Deserialize, Queryable, QueryableByName)]
 pub struct LeaderboardEntry {
+    #[sql_type = "Text"]
     pub firstname: String,
+    #[sql_type = "Text"]
     pub lastname: String,
+    #[sql_type = "Integer"]
     pub score: i32,
-    pub money: i32,
+    #[sql_type = "BigInt"]
+    pub rank: i64,
 }
