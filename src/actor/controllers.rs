@@ -274,6 +274,7 @@ impl ControlMeasure {
         conn: &PgConnection,
     ) -> Result<WSResponse, DbError> {
         use crate::db::schema::{regions, regions_status, status, users};
+        use rand::{thread_rng, Rng};
 
         // User input wrapped in a Result
         let control_measure_request_result = serde_json::from_str::<ControlMeasure>(&payload);
@@ -313,6 +314,22 @@ impl ControlMeasure {
                     None => return Ok(WSResponse::Error("User status not found".to_string())),
                 };
 
+                let control_measure_data =
+                    serde_json::from_str::<HashMap<String, ControlMeasureParams>>(&contents)
+                        .unwrap();
+
+                let is_success = if user.is_randomized {
+                    let mut rng = thread_rng();
+                    let n: f32 = rng.gen_range(0.0..=1.0);
+                    if let Some(val) = control_measure_data.get(&control_measure_request.name) {
+                        n <= val.mess_up_chance
+                    } else {
+                        return Ok(WSResponse::Error("Invalid event".to_string()));
+                    }
+                } else {
+                    true
+                };
+
                 let active_control_measure = (regions::table)
                     .inner_join(regions_status::table)
                     .filter(regions_status::status_id.eq(status_id))
@@ -337,31 +354,32 @@ impl ControlMeasure {
                     .set(status::cur_date.eq(control_measure_request.cur_date))
                     .execute(conn)?;
 
-                let control_measure_data =
-                    serde_json::from_str::<HashMap<String, ControlMeasureParams>>(&contents)
-                        .unwrap();
-
                 let zero_delta: &Vec<f64> = &vec![0_f64; 4];
 
                 let (mut active_control_measures, existing_delta) = if active_control_measure
                     .is_empty()
                 {
-                    let regions_row = diesel::insert_into(regions::table)
-                        .values(regions::region_id.eq(control_measure_request.region as i32))
-                        .get_result::<(
-                            i32,
-                            i32,
-                            SimulatorParams,
-                            models::status::ActiveControlMeasures,
-                        )>(conn)?;
+                    let active_control_measures = if is_success {
+                        let regions_row = diesel::insert_into(regions::table)
+                            .values(regions::region_id.eq(control_measure_request.region as i32))
+                            .get_result::<(
+                                i32,
+                                i32,
+                                SimulatorParams,
+                                models::status::ActiveControlMeasures,
+                            )>(conn)?;
 
-                    diesel::insert_into(regions_status::table)
-                        .values((
-                            regions_status::status_id.eq(status_id),
-                            regions_status::region_id.eq(regions_row.0),
-                        ))
-                        .execute(conn)?;
-                    (regions_row.3 .0, zero_delta)
+                        diesel::insert_into(regions_status::table)
+                            .values((
+                                regions_status::status_id.eq(status_id),
+                                regions_status::region_id.eq(regions_row.0),
+                            ))
+                            .execute(conn)?;
+                        regions_row.3 .0
+                    } else {
+                        HashMap::<String, i32>::new()
+                    };
+                    (active_control_measures, zero_delta)
                 } else {
                     match active_control_measure[0]
                         .0
@@ -408,23 +426,37 @@ impl ControlMeasure {
                                 ));
                             }
 
-                            let target_delta: &Vec<f64> = match control_measure_request.action {
+                            let target_delta: Vec<f64> = match control_measure_request.action {
                                 ControlMeasureAction::Apply => {
-                                    if let Some(x) = active_control_measures
-                                        .get_mut(&control_measure_request.name)
-                                    {
-                                        *x = control_measure_request.level;
-                                    } else {
-                                        active_control_measures.insert(
-                                            control_measure_request.name.clone(),
-                                            control_measure_request.level,
-                                        );
+                                    if is_success {
+                                        if let Some(x) = active_control_measures
+                                            .get_mut(&control_measure_request.name)
+                                        {
+                                            *x = control_measure_request.level;
+                                        } else {
+                                            active_control_measures.insert(
+                                                control_measure_request.name.clone(),
+                                                control_measure_request.level,
+                                            );
+                                        }
                                     }
-                                    &control_measure_level_info.params_delta
+                                    let target = control_measure_level_info
+                                        .params_delta
+                                        .iter()
+                                        .enumerate()
+                                        .map(|(ind, x)| match ind {
+                                            0 => -x,
+                                            1 => -x.abs(),
+                                            2 => -x.abs(),
+                                            3 => x.abs(),
+                                            _ => unreachable!(),
+                                        })
+                                        .collect::<Vec<f64>>();
+                                    target
                                 }
                                 ControlMeasureAction::Remove => {
                                     active_control_measures.remove(&control_measure_request.name);
-                                    zero_delta
+                                    zero_delta.to_vec()
                                 }
                             };
 
@@ -458,40 +490,43 @@ impl ControlMeasure {
                             );
 
                             conn.transaction::<_, diesel::result::Error, _>(|| {
-                                diesel::update(regions::table)
-                                    .filter(
-                                        regions::id.eq_any(
-                                            regions_status::table
-                                                .filter(regions_status::status_id.eq(status_id))
-                                                .select(regions_status::region_id)
-                                                .load::<i32>(conn)?,
-                                        ),
-                                    )
-                                    .filter(
-                                        regions::region_id
-                                            .eq(control_measure_request.region as i32),
-                                    )
-                                    .set((
-                                        regions::active_control_measures.eq(
-                                            models::status::ActiveControlMeasures(
-                                                active_control_measures,
+                                if is_success {
+                                    diesel::update(regions::table)
+                                        .filter(
+                                            regions::id.eq_any(
+                                                regions_status::table
+                                                    .filter(regions_status::status_id.eq(status_id))
+                                                    .select(regions_status::region_id)
+                                                    .load::<i32>(conn)?,
                                             ),
-                                        ),
-                                        regions::simulation_params.eq(SimulatorParams {
-                                            susceptible,
-                                            exposed,
-                                            infectious,
-                                            removed,
-                                            current_reproduction_number: control_measure_request
-                                                .params
-                                                .current_reproduction_number,
-                                            ideal_reproduction_number: changed_params[0],
-                                            compliance_factor: changed_params[1],
-                                            recovery_rate: changed_params[2],
-                                            infection_rate: changed_params[3],
-                                        }),
-                                    ))
-                                    .execute(conn)?;
+                                        )
+                                        .filter(
+                                            regions::region_id
+                                                .eq(control_measure_request.region as i32),
+                                        )
+                                        .set((
+                                            regions::active_control_measures.eq(
+                                                models::status::ActiveControlMeasures(
+                                                    active_control_measures,
+                                                ),
+                                            ),
+                                            regions::simulation_params.eq(SimulatorParams {
+                                                susceptible,
+                                                exposed,
+                                                infectious,
+                                                removed,
+                                                current_reproduction_number:
+                                                    control_measure_request
+                                                        .params
+                                                        .current_reproduction_number,
+                                                ideal_reproduction_number: changed_params[0],
+                                                compliance_factor: changed_params[1],
+                                                recovery_rate: changed_params[2],
+                                                infection_rate: changed_params[3],
+                                            }),
+                                        ))
+                                        .execute(conn)?;
+                                }
                                 diesel::update(users::table)
                                         .filter(users::email.eq(user.email))
                                         .set(
@@ -513,6 +548,7 @@ impl ControlMeasure {
                                     infection_rate: changed_params[3],
                                 },
                                 description: control_measure_message,
+                                is_success,
                             }))
                         }
                         None => Ok(WSResponse::Error("Level not found".to_string())),
@@ -701,6 +737,7 @@ impl Event {
 
                                 Ok(WSResponse::Event(ActionResponse {
                                     description: event_accept_message,
+                                    is_success: true,
                                     simulation_data: SimulatorResponse {
                                         date: event.cur_date,
                                         region: data.region,
