@@ -68,7 +68,7 @@ async fn end_level(
 
     let score = score_scale * (10.0 + performance_factor);
 
-    match update_user_at_level_end(&pool.get().unwrap(), user) {
+    match update_user_at_level_end(&pool.get().unwrap(), user, score as i32) {
         Ok(_) => Ok(HttpResponse::Ok().json(response::EndLevelResponse {
             message: "Success".to_string(),
             score,
