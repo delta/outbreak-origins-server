@@ -4,20 +4,19 @@ use crate::db::types::DbError;
 use crate::levels::response;
 use diesel::prelude::*;
 
-pub fn update_current_level(
+pub fn update_user_at_level_end(
     conn: &PgConnection,
     user: Authenticated,
 ) -> Result<response::DbResponse, DbError> {
     use crate::db::schema::users::dsl::*;
     let user_email = user.0.as_ref().map(|y| y.email.clone());
 
-    let user_result: QueryResult<models::User> =
-        diesel::update(users.filter(email.eq(user_email.unwrap())))
-            .set(curlevel.eq(curlevel + 1))
-            .get_result(conn);
-    match user_result {
-        Ok(user) => Ok(response::DbResponse {
-            message: format!("User {} updated to level {}", user.email, user.curlevel),
+    match diesel::update(users.filter(email.eq(user_email.unwrap())))
+        .set((curlevel.eq(curlevel + 1), money.eq(1000)))
+        .execute(conn)
+    {
+        Ok(_) => Ok(response::DbResponse {
+            message: "Updated user".to_string(),
         }),
         Err(e) => Err(DbError::from(e)),
     }
