@@ -21,6 +21,7 @@ pub struct EndLevelRequest {
 
 #[derive(Serialize)]
 pub struct EndLevelResponse {
+    pub message: String,
     pub score: f64,
 }
 
