@@ -1,0 +1,3 @@
+-- Your SQL goes here
+ALTER TABLE users
+ADD COLUMN is_randomized BOOLEAN NOT NULL DEFAULT FALSE;

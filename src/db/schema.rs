@@ -39,6 +39,7 @@ table! {
         is_active -> Bool,
         retryattemptsleft -> Int4,
         curr_level_score -> Int4,
+        is_randomized -> Bool,
     }
 }
 

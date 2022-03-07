@@ -45,6 +45,7 @@ pub struct SimulatorResponse {
 pub struct ActionResponse {
     pub simulation_data: SimulatorResponse,
     pub description: String,
+    pub is_success: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -162,6 +163,7 @@ pub struct ControlMeasureLevel {
 pub struct ControlMeasureParams {
     pub description: String,
     pub levels: HashMap<i32, ControlMeasureLevel>,
+    pub mess_up_chance: f32,
 }
 
 #[derive(Serialize, Deserialize)]
