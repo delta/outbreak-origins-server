@@ -5,6 +5,7 @@ use futures::future::{ready, Ready};
 
 pub type AuthenticationInfo = Option<models::Identity>;
 
+#[derive(Debug)]
 pub struct Authenticated(pub AuthenticationInfo);
 
 impl FromRequest for Authenticated {
