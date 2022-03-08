@@ -1,3 +1,3 @@
 pub mod controllers;
-mod response;
+pub mod response;
 pub mod routes;
