@@ -37,6 +37,7 @@ table! {
         money -> Int4,
         is_email_verified -> Bool,
         is_active -> Bool,
+        retryattemptsleft -> Int4,
     }
 }
 

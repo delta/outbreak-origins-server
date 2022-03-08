@@ -1,11 +1,15 @@
 use crate::auth::extractors::Authenticated;
 use crate::db::types::PgPool;
 use crate::game::controllers::get_active_control_measures;
-use crate::game::controllers::update_user_at_level_end;
+use crate::game::controllers::{update_user_at_level_end};
+use crate::levels::controllers::{get_current_level};
 use crate::game::response;
 use actix_web::{get, post, web, Error, HttpResponse};
 use std::collections::HashMap;
 use tracing::{error, info, instrument};
+use std::fs::File;
+use std::io::Read;
+
 
 #[get("/active-control-measures")]
 #[instrument(skip(pool))]
@@ -29,10 +33,12 @@ async fn end_level(
     pool: web::Data<PgPool>,
     data: web::Json<response::EndLevelRequest>,
 ) -> Result<HttpResponse, Error> {
-    let mortality = 0.8;
+    let cur_level = get_current_level(&pool.get().unwrap(), &user);
+    let file = File::open(format!("src/game/levels/{}/endLevel.json", cur_level)).unwrap();
+    let end_level_data: response::EndLevelData = serde_json::from_reader(file).unwrap();
+    let mortality = end_level_data.mortality;
     let population = 15000.0;
-    let start_money = 500.0;
-
+    let start_money = end_level_data.start_money;
     let deaths = (data.removed * mortality) / population;
     let caseload = (data.infected + data.removed) / (2.0 * population);
     let money_left = data.money_left / start_money;
@@ -47,7 +53,7 @@ async fn end_level(
 
     let score = score_scale * (20.0 + performance_factor);
 
-    match update_user_at_level_end(&pool.get().unwrap(), user, score as i32) {
+    match update_user_at_level_end(&pool.get().unwrap(), user ,score as i32, start_money) {
         Ok(_) => {
             info!("User ended level successfully");
             Ok(HttpResponse::Ok().json(response::EndLevelResponse {
