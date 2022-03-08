@@ -93,6 +93,9 @@ impl Seed {
             error!("Couldn't read seed file: {}", e);
             String::default()
         });
+        if contents == String::default() {
+            return Ok(WSResponse::Error("Internal Server Error".to_string()));
+        }
         Ok(WSResponse::Seed(contents))
     }
 }

@@ -39,7 +39,8 @@ async fn main() -> std::io::Result<()> {
     LogTracer::init().expect("Unable to setup log tracer!");
 
     let app_name = "outbreak_server".to_string();
-    let (non_blocking_writer, _guard) = tracing_appender::non_blocking(std::io::stdout());
+    let log_file = tracing_appender::rolling::hourly("logs", "server.log");
+    let (non_blocking_writer, _guard) = tracing_appender::non_blocking(log_file);
     let bunyan_formatting_layer = BunyanFormattingLayer::new(app_name, non_blocking_writer);
     let subscriber = Registry::default()
         .with(EnvFilter::new("INFO"))
