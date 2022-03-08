@@ -1,0 +1,121 @@
+{
+  "Internal Lockdown": {
+    "description": "Lockdown Description",
+    "levels" :{
+      "1": {
+        "params_delta": [-0.4, 0.25, 0, 0],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [-0.4, 0.25, 0, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [-0.4, 0.25, 0, 0],
+        "cost": 100
+      }
+    }
+  },
+  "Awareness": {
+    "description": "News",
+    "levels": {
+      "1": {
+        "params_delta": [-0.3, 0.1, 0, 0],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [-0.3, 0.1, 0, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [-0.3, 0.1, 0, 0],
+        "cost": 100
+      }
+    }
+  },
+  "Hospital Infrastructure": {
+    "description": "Hospital Infrastructure Description",
+    "levels": {
+      "1": {
+        "params_delta": [0, 0, -0.01, 0],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [0, 0, -0.01, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [0, 0, -0.01, 0],
+        "cost": 100
+      }
+    }
+  },
+  "Vaccination": {
+    "description": "Cure",
+    "levels": {
+      "1": {
+        "params_delta": [0, 0, 0, -0.04],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [0, 0, 0, -0.04],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [0, 0, 0, -0.04],
+        "cost": 100
+      }
+    }
+  },
+  "Manpower": {
+    "description": "Manpower Description",
+    "levels": {
+      "1": {
+        "params_delta": [0, 0, -0.008, 0],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [0, 0, -0.008, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [0, 0, -0.008, 0],
+        "cost": 100
+      }
+    }
+  },
+  "Travel Restriction": {
+    "description": "Travel Restriction Description",
+    "levels": {
+      "1": {
+        "params_delta": [-0.2, -0.15, 0, 0],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [-0.2, -0.15, 0, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [-0.2, -0.15, 0, 0],
+        "cost": 100
+      }
+    }
+  },
+  "Testing": {
+    "description": "Testing Description",
+    "levels": {
+      "1": {
+        "params_delta": [0.2, 0, 0, 0],
+        "cost": 100
+      },
+      "2": {
+        "params_delta": [0.2, 0, 0, 0],
+        "cost": 100
+      },
+      "3": {
+        "params_delta": [0.2, 0, 0, 0],
+        "cost": 100
+      }
+    }
+  }
+}

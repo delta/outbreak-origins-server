@@ -1,0 +1,239 @@
+{
+    "control_measures":[
+        {
+            "name": "Internal Lockdown",
+            "description": "Lockdown Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": -0.4
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.25
+                }
+            ]
+        },
+        {
+            "name": "Awareness",
+            "description": "News",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": -0.3
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ]
+        },
+        {
+            "name": "Hospital Infrastructure",
+            "description": "Hospital Infrastructure Description",
+            "params_delta": [
+                {
+                    "name": "Recovery Rate",
+                    "value": -0.01
+                }
+            ]
+        },
+        {
+            "name": "Vaccination",
+            "description": "Cure",
+            "params_delta": [
+                {
+                    "name": "infection_rate",
+                    "value": -0.04
+                }
+            ]
+        },
+        {
+            "name": "Manpower",
+            "description": "Manpower Description",
+            "params_delta": [
+                {
+                    "name": "Recovery Rate",
+                    "value": -0.008
+                }
+            ]
+        },
+        {
+            "name": "Travel Restriction",
+            "description": "Travel Restriction Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": -0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": -0.15
+                }
+            ]
+        },
+        {
+            "name": "Testing",
+            "description": "Testing Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                }
+            ]
+        }
+
+    ],
+    "events": [
+        {
+            "name": "Olympics",
+            "description": "Olympics Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ],
+            "reward": 500
+        },
+        {
+            "name": "Tennis Event",
+            "description": "Tennis Event Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ],
+            "reward": 500
+        },
+        {
+            "name": "Cricket World Cup",
+            "description": "Cricket World Cup Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ],
+            "reward": 500
+        },
+        {
+            "name": "Footall World Cup",
+            "description": "Footall World Cup Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ],
+            "reward": 500
+        },
+        {
+            "name": "Central Election",
+            "description": "Central Election Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ],
+            "reward": 0
+        },
+        {
+            "name": "Local Body Election",
+            "description": "Local Body Election Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ],
+            "reward": 0
+        },
+        {
+            "name": "Music Concert",
+            "description": "Music Concert Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ],
+            "reward": 1000
+        },
+        {
+            "name": "Movie Release",
+            "description": "Movie Release Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ],
+            "reward": 1000
+        },
+        {
+            "name": "Anime Convention",
+            "description": "Anime Convention Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ],
+            "reward": 1000
+        },
+        {
+            "name": "hanami",
+            "description": "hanami Description",
+            "params_delta": [
+                {
+                    "name": "Ideal Reproduction",
+                    "value": 0.2
+                },
+                {
+                    "name": "Compliance Factor",
+                    "value": 0.1
+                }
+            ],
+            "reward": 1000
+        }
+    ]
+}
