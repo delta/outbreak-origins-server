@@ -2,7 +2,7 @@ use crate::auth::extractors::Authenticated;
 use crate::db::types::PgPool;
 use crate::game::controllers::get_active_control_measures;
 use crate::game::response;
-use crate::levels::controllers::update_user_at_level_end;
+use crate::game::controllers::update_user_at_level_end;
 use actix_web::{get, post, web, Error, HttpResponse};
 use std::collections::HashMap;
 use tracing::{instrument, error, info};

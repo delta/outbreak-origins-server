@@ -38,3 +38,19 @@ pub fn get_active_control_measures(
     };
     Ok(acm)
 }
+
+pub fn update_user_at_level_end(
+    conn: &PgConnection,
+    user: Authenticated,
+) -> Result<String, DbError> {
+    use crate::db::schema::users::dsl::*;
+    let user_email = user.0.as_ref().map(|y| y.email.clone());
+
+    match diesel::update(users.filter(email.eq(user_email.unwrap())))
+        .set((curlevel.eq(curlevel + 1), money.eq(1000)))
+        .execute(conn)
+    {
+        Ok(_) => Ok("Updated User".to_string()),
+        Err(e) => Err(DbError::from(e)),
+    }
+}
