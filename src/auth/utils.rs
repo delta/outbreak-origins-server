@@ -6,6 +6,7 @@ use jsonwebtoken::{
 };
 use sendgrid::{Destination, Mail, SGClient};
 use std::env;
+use tracing::{error, instrument};
 
 // Result is from jsonwebtoken error
 pub fn create_jwt(
@@ -50,6 +51,7 @@ pub fn get_info_token(token: &str) -> errors::Result<TokenData<Claims>> {
     token_message
 }
 
+#[instrument]
 pub fn send_verify_email(email: &str, name: &str) -> Result<String, String> {
     dotenv().expect("Can't load environment variables");
 
@@ -92,13 +94,14 @@ pub fn send_verify_email(email: &str, name: &str) -> Result<String, String> {
 
     match SGClient::send(&sgc, mail) {
         Ok(_) => Ok(String::from("Email sent successfully")),
-        Err(x) => {
-            println!("{}", x);
+        Err(e) => {
+            error!("Couldn't send verification email: {}", e);
             Err(String::from("Couldn't send email"))
         }
     }
 }
 
+#[instrument]
 pub fn send_reset_password_mail(name: &str, email: &str) -> Result<String, String> {
     dotenv().expect("Can't load environment variables");
 
@@ -138,8 +141,8 @@ pub fn send_reset_password_mail(name: &str, email: &str) -> Result<String, Strin
 
     match SGClient::send(&sgc, mail) {
         Ok(_) => Ok(String::from("Email sent successfully")),
-        Err(x) => {
-            println!("{}", x);
+        Err(e) => {
+            error!("Couldn't send password reset mail: {}", e);
             Err(String::from("Couldn't send email"))
         }
     }

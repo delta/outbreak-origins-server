@@ -12,7 +12,7 @@ dependencies = [
  "actix_derive",
  "bitflags",
  "bytes 0.5.6",
- "crossbeam-channel",
+ "crossbeam-channel 0.4.4",
  "derive_more",
  "futures-channel",
  "futures-util",
@@ -127,7 +127,7 @@ dependencies = [
  "http",
  "httparse",
  "indexmap",
- "itoa",
+ "itoa 0.4.8",
  "language-tags",
  "lazy_static",
  "log",
@@ -434,6 +434,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ansi_term"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
+dependencies = [
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "approx"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -736,8 +745,18 @@ version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b153fe7cbef478c567df0f972e02e6d736db11affe43dfc9c56a9374d1adfb87"
 dependencies = [
- "crossbeam-utils",
+ "crossbeam-utils 0.7.2",
  "maybe-uninit",
+]
+
+[[package]]
+name = "crossbeam-channel"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e54ea8bc3fb1ee042f5aace6e3c6e025d3874866da222930f70ce62aceba0bfa"
+dependencies = [
+ "cfg-if 1.0.0",
+ "crossbeam-utils 0.8.7",
 ]
 
 [[package]]
@@ -748,6 +767,16 @@ checksum = "c3c7c73a2d1e9fc0886a08b93e98eb643461230d5f1925e4036204d5f2e261a8"
 dependencies = [
  "autocfg",
  "cfg-if 0.1.10",
+ "lazy_static",
+]
+
+[[package]]
+name = "crossbeam-utils"
+version = "0.8.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5e5bed1f1c269533fa816a0a5492b3545209a205ca1a54842be180eb63a16a6"
+dependencies = [
+ "cfg-if 1.0.0",
  "lazy_static",
 ]
 
@@ -1048,6 +1077,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gethostname"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4addc164932852d066774c405dbbdb7914742d2b39e39e1a7ca949c856d054d1"
+dependencies = [
+ "libc",
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1181,7 +1220,7 @@ checksum = "1323096b05d41827dadeaee54c9981958c0f94e670bc94ed80037d1a7b8b186b"
 dependencies = [
  "bytes 1.1.0",
  "fnv",
- "itoa",
+ "itoa 0.4.8",
 ]
 
 [[package]]
@@ -1222,7 +1261,7 @@ dependencies = [
  "http-body",
  "httparse",
  "httpdate",
- "itoa",
+ "itoa 0.4.8",
  "pin-project-lite 0.2.7",
  "socket2 0.4.4",
  "tokio 1.15.0",
@@ -1306,6 +1345,12 @@ name = "itoa"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b71991ff56294aa922b450139ee08b3bfc70982c6b2c7562771375cf73542dd4"
+
+[[package]]
+name = "itoa"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1aab8fc367588b89dcee83ab0fd66b72b50b72fa1904d7095045ace2b0c81c35"
 
 [[package]]
 name = "js-sys"
@@ -1396,6 +1441,15 @@ name = "match_cfg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffbee8634e0d45d258acb448e7eaab3fce7a0a467395d4d9f228e3c1f01fb2e4"
+
+[[package]]
+name = "matchers"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8263075bb86c5a1b1427b5ae862e8889656f126e9f77c484496e8b47cf5c5558"
+dependencies = [
+ "regex-automata",
+]
 
 [[package]]
 name = "matches"
@@ -1671,6 +1725,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "num_threads"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97ba99ba6393e2c3734791401b66902d981cb03bf190af674ca69949b6d5fb15"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "ode_solvers"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1753,6 +1816,12 @@ dependencies = [
  "strum_macros",
  "test_manager",
  "thiserror",
+ "tracing",
+ "tracing-actix-web",
+ "tracing-appender",
+ "tracing-bunyan-formatter",
+ "tracing-log",
+ "tracing-subscriber",
  "virus_simulator",
 ]
 
@@ -2062,6 +2131,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex-automata"
+version = "0.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c230d73fb8d8c1b9c0b3135c5142a8acee3a0558fb8db5cf1cb65f8d7862132"
+dependencies = [
+ "regex-syntax",
+]
+
+[[package]]
 name = "regex-syntax"
 version = "0.6.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2297,7 +2375,7 @@ version = "1.0.68"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f690853975602e1bfe1ccbf50504d67174e3bcf340f23b5ea9992e0587a52d8"
 dependencies = [
- "itoa",
+ "itoa 0.4.8",
  "ryu",
  "serde",
 ]
@@ -2309,7 +2387,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "edfa57a7f8d9c1d260a549e7224100f6c43d43f9103e06dd8b4095a9b2b43ce9"
 dependencies = [
  "form_urlencoded",
- "itoa",
+ "itoa 0.4.8",
  "ryu",
  "serde",
 ]
@@ -2344,6 +2422,15 @@ dependencies = [
  "cpufeatures",
  "digest",
  "opaque-debug",
+]
+
+[[package]]
+name = "sharded-slab"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "900fba806f70c630b0a382d0d825e17a0f19fcd059a2ade1ff237bcddf446b31"
+dependencies = [
+ "lazy_static",
 ]
 
 [[package]]
@@ -2552,6 +2639,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "thread_local"
+version = "1.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5516c27b78311c50bf42c071425c560ac799b11c30b31f87e3081965fe5e0180"
+dependencies = [
+ "once_cell",
+]
+
+[[package]]
 name = "threadpool"
 version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2583,6 +2679,17 @@ dependencies = [
  "time-macros",
  "version_check 0.9.3",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "time"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "004cbc98f30fa233c61a38bc77e96a9106e65c88f2d3bef182ae952027e5753d"
+dependencies = [
+ "itoa 1.0.1",
+ "libc",
+ "num_threads",
 ]
 
 [[package]]
@@ -2713,7 +2820,60 @@ dependencies = [
  "cfg-if 1.0.0",
  "log",
  "pin-project-lite 0.2.7",
+ "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-actix-web"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc36fc2f840643e49d220d07cd7ca81bc31c7f6df25f164d4257971533dab354"
+dependencies = [
+ "actix-web",
+ "futures",
+ "tracing",
+ "tracing-futures",
+ "uuid",
+]
+
+[[package]]
+name = "tracing-appender"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ab026b18a46ac429e5c98bec10ca06424a97b3ad7b3949d9b4a102fff6623c4"
+dependencies = [
+ "crossbeam-channel 0.5.2",
+ "time 0.3.7",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8276d9a4a3a558d7b7ad5303ad50b53d58264641b82914b7ada36bd762e7a716"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "tracing-bunyan-formatter"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd99ff040622c69c0fc4bd3ea5fe16630ce46400a79bd41339391b2d416ea24c"
+dependencies = [
+ "gethostname",
+ "log",
+ "serde",
+ "serde_json",
+ "time 0.3.7",
+ "tracing",
+ "tracing-core",
+ "tracing-log",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2733,6 +2893,35 @@ checksum = "97d095ae15e245a057c8e8451bab9b3ee1e1f68e9ba2b4fbc18d0ac5237835f2"
 dependencies = [
  "pin-project 1.0.8",
  "tracing",
+]
+
+[[package]]
+name = "tracing-log"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6923477a48e41c1951f1999ef8bb5a3023eb723ceadafe78ffb65dc366761e3"
+dependencies = [
+ "lazy_static",
+ "log",
+ "tracing-core",
+]
+
+[[package]]
+name = "tracing-subscriber"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5312f325fe3588e277415f5a6cca1f4ccad0f248c4cd5a4bd33032d7286abc22"
+dependencies = [
+ "ansi_term",
+ "lazy_static",
+ "matchers",
+ "regex",
+ "sharded-slab",
+ "smallvec",
+ "thread_local",
+ "tracing",
+ "tracing-core",
+ "tracing-log",
 ]
 
 [[package]]
@@ -2854,6 +3043,15 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+]
+
+[[package]]
+name = "uuid"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+dependencies = [
+ "getrandom 0.2.3",
 ]
 
 [[package]]

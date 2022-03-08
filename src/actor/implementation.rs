@@ -15,6 +15,8 @@ use std::time::{Duration, Instant};
 
 use crate::auth::extractors;
 
+use tracing::{error, instrument};
+
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -31,7 +33,6 @@ impl Actor for Game {
         use crate::db::schema::users::dsl::*;
         use diesel::prelude::*;
 
-        println!("Started");
         let conn = self.pool.get().expect("Couldn't get DB connection");
 
         let auth_user = self.user.0.as_ref().unwrap();
@@ -45,7 +46,6 @@ impl Actor for Game {
     fn stopped(&mut self, ctx: &mut Self::Context) {
         use crate::db::schema::users::dsl::*;
         use diesel::prelude::*;
-        println!("Stopped");
 
         let conn = self.pool.get().expect("Couldn't get DB connection");
 
@@ -59,10 +59,14 @@ impl Actor for Game {
     }
 }
 
+#[instrument(skip(res))]
 fn ws_response(res: Result<WSResponse, DbError>) -> WSResponse {
     match res {
         Ok(x) => x,
-        Err(_) => WSResponse::Error("Internal Server Error".to_string()),
+        Err(e) => {
+            error!("{}", e);
+            WSResponse::Error("Internal Server Error".to_string())
+        }
     }
 }
 
@@ -70,16 +74,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
     fn handle(&mut self, item: Result<Message, ProtocolError>, ctx: &mut Self::Context) {
         match item {
             Ok(Message::Ping(item)) => {
-                println!("ping");
                 self.heartbeat = Instant::now();
                 ctx.pong(&item);
             }
             Ok(Message::Pong(_)) => {
-                println!("pong");
                 self.heartbeat = Instant::now();
             }
             Ok(Message::Text(text)) => {
-                println!("{}", text);
                 let request = serde_json::from_str::<WSRequest>(&text).unwrap_or(WSRequest {
                     kind: "".to_string(),
                     region: 0,
@@ -119,11 +120,8 @@ impl Game {
 
     pub fn heartbeat(&self, ctx: &mut <Self as Actor>::Context) {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
-            // check client heartbeats
+            // if heartbeat timed out
             if Instant::now().duration_since(act.heartbeat) > CLIENT_TIMEOUT {
-                // heartbeat timed out
-                println!("Websocket Client heartbeat failed, disconnecting!");
-
                 // stop actor
                 ctx.stop();
 

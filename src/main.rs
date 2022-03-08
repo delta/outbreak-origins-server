@@ -5,8 +5,13 @@ extern crate dotenv;
 use crate::db::utils::create_db_pool;
 use actix_files as fs;
 use actix_identity::IdentityService;
-use actix_web::middleware as mw;
 use actix_web::{web, App, HttpServer};
+
+use tracing_actix_web::TracingLogger;
+use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
+use tracing_log::LogTracer;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::{EnvFilter, Registry};
 
 use dotenv::dotenv;
 
@@ -31,6 +36,18 @@ async fn main() -> std::io::Result<()> {
         std::process::exit(1)
     }
 
+    LogTracer::init().expect("Unable to setup log tracer!");
+
+    let app_name = "outbreak_server".to_string();
+    let log_file = tracing_appender::rolling::hourly("logs", "server.log");
+    let (non_blocking_writer, _guard) = tracing_appender::non_blocking(log_file);
+    let bunyan_formatting_layer = BunyanFormattingLayer::new(app_name, non_blocking_writer);
+    let subscriber = Registry::default()
+        .with(EnvFilter::new("INFO"))
+        .with(JsonStorageLayer)
+        .with(bunyan_formatting_layer);
+    tracing::subscriber::set_global_default(subscriber).unwrap();
+
     let pool = create_db_pool();
     let app_url = dotenv::var("APP_URL").unwrap();
 
@@ -41,7 +58,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(auth::middleware::CheckAuth {})
             .wrap(IdentityService::new(auth::middleware::cookie_policy()))
             .wrap(common_middleware::cors_config())
-            .wrap(mw::Logger::default())
+            .wrap(TracingLogger)
             .service(web::resource("/ws/").route(web::get().to(actor::routes::ws_index)))
             .service(fs::Files::new("/events", "static/").index_file("index.html"))
             .configure(auth::routes::auth_routes)

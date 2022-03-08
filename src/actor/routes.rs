@@ -6,6 +6,9 @@ use crate::db::models::User;
 use crate::db::types::PgPool;
 use diesel::prelude::*;
 
+use tracing::{info, instrument};
+
+#[instrument(skip(r, stream, pool))]
 pub async fn ws_index(
     r: HttpRequest,
     stream: web::Payload,
@@ -27,10 +30,9 @@ pub async fn ws_index(
 
     // Don't allow multiple simultaneous connections
     if auth_user.is_active {
+        info!("Another session is active");
         return Ok(HttpResponse::Ok().status(StatusCode::FORBIDDEN).finish());
     }
 
-    let res = implementation::ws::start(implementation::Game::new(pool, user), &r, stream);
-    println!("{:?}", res);
-    res
+    implementation::ws::start(implementation::Game::new(pool, user), &r, stream)
 }

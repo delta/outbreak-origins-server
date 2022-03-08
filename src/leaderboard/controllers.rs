@@ -26,8 +26,12 @@ pub fn get_leaderboard(
 
     let user_result: Vec<models::LeaderboardEntry> = sql_query(format!(
         "SELECT firstname, \
-        lastname, score, rank() OVER (ORDER BY score DESC) AS rank FROM users \
-        WHERE email = \'{}\';",
+        lastname, score, rank from \
+        (
+            SELECT email, firstname, \
+            lastname, score, rank() OVER (ORDER BY score DESC) AS rank \
+            FROM users \
+        ) as foo WHERE email = \'{}\';",
         user_email
     ))
     .load(conn)
