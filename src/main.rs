@@ -8,10 +8,10 @@ use actix_identity::IdentityService;
 use actix_web::{web, App, HttpServer};
 
 use tracing_actix_web::TracingLogger;
-use tracing_subscriber::{Registry, EnvFilter};
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_bunyan_formatter::{JsonStorageLayer, BunyanFormattingLayer};
+use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::{EnvFilter, Registry};
 
 use dotenv::dotenv;
 

@@ -3,7 +3,7 @@ use crate::db::types::PgPool;
 use crate::leaderboard::controllers::get_leaderboard;
 use crate::leaderboard::response::LeaderboardResponse;
 use actix_web::{get, web, Error, HttpResponse};
-use tracing::{instrument, error};
+use tracing::{error, instrument};
 
 #[get("/{pg_num}")]
 #[instrument(skip(pool))]

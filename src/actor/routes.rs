@@ -6,7 +6,7 @@ use crate::db::models::User;
 use crate::db::types::PgPool;
 use diesel::prelude::*;
 
-use tracing::{instrument, info};
+use tracing::{info, instrument};
 
 #[instrument(skip(r, stream, pool))]
 pub async fn ws_index(
@@ -34,6 +34,5 @@ pub async fn ws_index(
         return Ok(HttpResponse::Ok().status(StatusCode::FORBIDDEN).finish());
     }
 
-    let res = implementation::ws::start(implementation::Game::new(pool, user), &r, stream);
-    res
+    implementation::ws::start(implementation::Game::new(pool, user), &r, stream)
 }

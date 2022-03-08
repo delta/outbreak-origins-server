@@ -1,7 +1,5 @@
 use crate::auth::extractors::Authenticated;
 use crate::db::models;
-use crate::db::types::DbError;
-use crate::levels::response;
 use diesel::prelude::*;
 
 pub fn get_current_level(conn: &PgConnection, user: Authenticated) -> i32 {

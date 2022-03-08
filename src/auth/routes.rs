@@ -3,7 +3,7 @@ use crate::db::models;
 use crate::db::types::PgPool;
 use actix_identity::Identity;
 use actix_web::{get, http::StatusCode, post, web, Error, HttpResponse};
-use tracing::{instrument, error, info};
+use tracing::{error, info, instrument};
 
 #[post("/user/register")]
 #[instrument(skip(pool))]

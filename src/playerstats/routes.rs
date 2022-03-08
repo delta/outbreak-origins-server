@@ -2,7 +2,7 @@ use crate::auth::extractors::Authenticated;
 use crate::db::types::PgPool;
 use crate::playerstats::{controllers, response};
 use actix_web::{get, web, Error, HttpResponse};
-use tracing::{instrument, error};
+use tracing::{error, instrument};
 
 #[get("/score")]
 #[instrument(skip(pool))]
