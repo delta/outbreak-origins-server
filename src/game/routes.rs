@@ -10,27 +10,6 @@ use tracing::{error, info, instrument};
 use std::fs::File;
 use std::io::Read;
 
-#[get("/start-level")]
-async fn start_level(
-    user: Authenticated,
-    pool: web::Data<PgPool>,
-    level: web::Query<response::StartLevelRequest>,
-) -> Result<HttpResponse, Error> {
-    let cur_level = get_current_level(&pool.get().unwrap(), &user);
-    if cur_level < level.level {
-        Ok(HttpResponse::Ok().json(response::StartLevelError {
-            message: format!("Level {} is not yet unlocked", level.level),
-        }))
-    } else {
-        let mut file =
-            File::open(format!("src/game/levels/{}/level_start.json", level.level)).unwrap();
-        let mut json_string = String::new();
-        file.read_to_string(&mut json_string).unwrap();
-        Ok(HttpResponse::Ok()
-            .content_type("application/json")
-            .body(json_string))
-    }
-}
 
 #[get("/active-control-measures")]
 #[instrument(skip(pool))]
@@ -74,7 +53,7 @@ async fn end_level(
 
     let score = score_scale * (20.0 + performance_factor);
 
-    match update_user_at_level_end(&pool.get().unwrap(), user, score as i32) {
+    match update_user_at_level_end(&pool.get().unwrap(), user ,score as i32, start_money) {
         Ok(_) => {
             info!("User ended level successfully");
             Ok(HttpResponse::Ok().json(response::EndLevelResponse {
