@@ -750,12 +750,13 @@ impl Event {
 }
 
 impl Save {
+    #[instrument(skip(conn))]
     pub fn handle(
         payload: String,
         user: &extractors::Authenticated,
         conn: &PgConnection,
     ) -> Result<WSResponse, DbError> {
-        use crate::db::schema::{regions, regions_status, users};
+        use crate::db::schema::{regions, regions_status, status, users};
         let save_request_result = serde_json::from_str::<Save>(&payload);
         let user = user.0.as_ref().unwrap();
         let user = (users::table)
@@ -775,8 +776,25 @@ impl Save {
                     None => return Ok(WSResponse::Error("Internal Server Error".to_string())),
                 };
 
+                let save_params = SimulatorParams {
+                    susceptible: save_request.params.susceptible / POPULATION,
+                    exposed: save_request.params.exposed / POPULATION,
+                    infectious: save_request.params.infectious / POPULATION,
+                    removed: save_request.params.removed / POPULATION,
+                    current_reproduction_number: save_request.params.current_reproduction_number,
+                    ideal_reproduction_number: save_request.params.ideal_reproduction_number,
+                    compliance_factor: save_request.params.compliance_factor,
+                    recovery_rate: save_request.params.recovery_rate,
+                    infection_rate: save_request.params.infection_rate,
+                };
+
+                diesel::update(status::table)
+                    .filter(status::id.eq(status_id))
+                    .set(status::cur_date.eq(save_request.cur_date))
+                    .execute(conn)?;
+
                 diesel::update(regions::table)
-                    .set(regions::simulation_params.eq(save_request.params))
+                    .set(regions::simulation_params.eq(save_params))
                     .filter(regions::region_id.eq(save_request.region as i32))
                     .filter(
                         regions::id.eq_any(
