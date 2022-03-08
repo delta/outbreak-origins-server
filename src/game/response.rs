@@ -2,7 +2,7 @@ use crate::db::models::status::ActiveControlMeasures;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct StartLevelRequest {
     pub level: i32,
 }
@@ -12,7 +12,7 @@ pub struct StartLevelError {
     pub message: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct EndLevelRequest {
     pub infected: f64,
     pub removed: f64,

@@ -41,7 +41,7 @@ pub struct TestUser {
     pub is_email_verified: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct RegisterUser {
     pub firstname: String,
     pub lastname: String,

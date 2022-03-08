@@ -16,6 +16,8 @@ use std::fs;
 use std::path::Path;
 use virus_simulator::Simulator;
 
+use tracing::{error, info, instrument};
+
 const POPULATION: f64 = 5000.0;
 const TOTAL_DAYS: f64 = 700.0;
 const EVENT_POSTPONE_PENALTY: i32 = 100;
@@ -30,6 +32,7 @@ pub fn get_description(key: String, level: i32) -> Read {
 }
 
 impl NewsRequest {
+    #[instrument(skip(conn))]
     pub fn handle(
         payload: String,
         user: &extractors::Authenticated,
@@ -67,6 +70,7 @@ impl NewsRequest {
 }
 
 impl Seed {
+    #[instrument(skip(conn))]
     pub fn handle(
         user: &extractors::Authenticated,
         conn: &PgConnection,
@@ -85,12 +89,16 @@ impl Seed {
 
         let file = format!("src/game/levels/{}/seed.json", user.curlevel);
         let path = Path::new(&file);
-        let contents = fs::read_to_string(&path).expect("Something went wrong reading the file");
+        let contents = fs::read_to_string(&path).unwrap_or_else(|e| {
+            error!("Couldn't read seed file: {}", e);
+            String::default()
+        });
         Ok(WSResponse::Seed(contents))
     }
 }
 
 impl Start {
+    #[instrument(skip(conn))]
     pub fn handle(
         payload: String,
         user: &extractors::Authenticated,
@@ -117,6 +125,8 @@ impl Start {
                     .default_values()
                     .get_result::<(i32, i32, i32, i32)>(conn)?
                     .0;
+
+                info!("Creating a status entry with id: {}", s_id);
 
                 diesel::update((users::table).filter(users::email.eq(user.email)))
                     .set(users::status.eq(s_id))
@@ -154,6 +164,8 @@ impl Start {
                         models::status::ActiveControlMeasures,
                     )>(conn)?
                     .0;
+
+                info!("Creating new region entry with id: {}", new_region_id);
 
                 // Create an entry in regions_status
                 diesel::insert_into(regions_status::table)
@@ -194,6 +206,8 @@ impl Start {
                         &start_params.recovery_rate,
                         &start_params.infection_rate,
                     );
+
+                    info!("Simulating Start with params: {:?}", start_params);
                     let f = sim.simulate(0_f64, TOTAL_DAYS);
 
                     let payload = serialize_state(&f, POPULATION);
@@ -225,6 +239,8 @@ impl Start {
                 &sim_params.recovery_rate,
                 &sim_params.infection_rate,
             );
+
+            info!("Simulating Start with params: {:?}", sim_params);
             let f = sim.simulate(0_f64, TOTAL_DAYS);
 
             let payload = serialize_state(&f, POPULATION);
@@ -248,6 +264,7 @@ impl Start {
 }
 
 impl ControlMeasure {
+    #[instrument(skip(conn))]
     pub fn handle(
         payload: String,
         user: &extractors::Authenticated,
@@ -305,6 +322,7 @@ impl ControlMeasure {
                     .get(&control_measure_request.name)
                 {
                     if *control == control_measure_request.level {
+                        info!("Control measure already applied at this level");
                         return Ok(WSResponse::Error(
                             "Control measure with same level already active".to_string(),
                         ));
@@ -376,6 +394,7 @@ impl ControlMeasure {
                             if control_measure_request.action == ControlMeasureAction::Apply
                                 && control_measure_level_info.cost > user.money as u32
                             {
+                                info!("Not enough money");
                                 return Ok(WSResponse::Error("Not enough money".to_string()));
                             }
                             if control_measure_request.action == ControlMeasureAction::Remove
@@ -425,6 +444,10 @@ impl ControlMeasure {
                                 .map(|(&a, &b)| a + b)
                                 .collect();
 
+                            info!(
+                                "Simulating Control Measure with params: {:?}\n{:?}",
+                                &control_measure_request.params, &changed_params
+                            );
                             let (payload, susceptible, exposed, infectious, removed) = simulate(
                                 &control_measure_request.params,
                                 &changed_params,
@@ -500,6 +523,7 @@ impl ControlMeasure {
 }
 
 impl Event {
+    #[instrument(skip(conn))]
     pub fn handle(
         payload: String,
         user: &extractors::Authenticated,
@@ -548,6 +572,7 @@ impl Event {
                         .first::<i32>(conn)
                     {
                         Ok(event_id) => {
+                            info!("Requested Event");
                             if event_id == 0 {
                                 diesel::update(status)
                                     .filter(id.eq(user_status_id))
@@ -585,6 +610,8 @@ impl Event {
                         Err(_) => Ok(WSResponse::Error("Couldn't find user".to_string())),
                     },
                     EventAction::Accept => {
+                        info!("Accepting Event: {}", &event.id);
+
                         let event_accept_message =
                             &get_description(event.id.to_string(), user.curlevel);
                         let event_accept_message = match event_accept_message {
@@ -619,6 +646,10 @@ impl Event {
                                     .map(|(&a, &b)| a + b)
                                     .collect();
 
+                                info!(
+                                    "Simulating Event with params: {:?}\n{:?}",
+                                    &event.params, &changed_params
+                                );
                                 let (payload, susceptible, exposed, infectious, removed) =
                                     simulate(&event.params, &changed_params, event.cur_date);
 
@@ -682,6 +713,7 @@ impl Event {
                         }
                     }
                     EventAction::Decline => {
+                        info!("Declined Event: {}", &event.id);
                         let event_decline_message =
                             &get_description(event.id.to_string(), user.curlevel);
                         let event_decline_message = match event_decline_message {
@@ -695,6 +727,7 @@ impl Event {
                         Ok(WSResponse::Ok(event_decline_message))
                     }
                     EventAction::Postpone => {
+                        info!("Postponed Event: {}", &event.id);
                         let event_postpone_message =
                             &get_description(event.id.to_string(), user.curlevel);
                         let event_postpone_message = match event_postpone_message {

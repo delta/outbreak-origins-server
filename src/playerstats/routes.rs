@@ -2,8 +2,10 @@ use crate::auth::extractors::Authenticated;
 use crate::db::types::PgPool;
 use crate::playerstats::{controllers, response};
 use actix_web::{get, web, Error, HttpResponse};
+use tracing::{instrument, error};
 
 #[get("/score")]
+#[instrument(skip(pool))]
 pub async fn score(pool: web::Data<PgPool>, user: Authenticated) -> Result<HttpResponse, Error> {
     let email = user.0.as_ref().map(|y| y.email.clone());
     let useremail = email.unwrap();
@@ -13,7 +15,7 @@ pub async fn score(pool: web::Data<PgPool>, user: Authenticated) -> Result<HttpR
     })
     .await
     .map_err(|e| {
-        eprintln!("{}", e);
+        error!("Couldn't get score: {}", e);
         HttpResponse::InternalServerError().json(response::ScoreResponse {
             status: String::from("Failed"),
             data: 0,
@@ -26,6 +28,7 @@ pub async fn score(pool: web::Data<PgPool>, user: Authenticated) -> Result<HttpR
 }
 
 #[get("/money")]
+#[instrument(skip(pool))]
 pub async fn money(pool: web::Data<PgPool>, user: Authenticated) -> Result<HttpResponse, Error> {
     let email = user.0.as_ref().map(|y| y.email.clone());
     let useremail = email.unwrap();
@@ -35,7 +38,7 @@ pub async fn money(pool: web::Data<PgPool>, user: Authenticated) -> Result<HttpR
     })
     .await
     .map_err(|e| {
-        eprintln!("{}", e);
+        error!("Couldn't get money: {}", e);
         HttpResponse::InternalServerError().json(response::MoneyResponse {
             status: String::from("Failed"),
             data: 0,

@@ -7,8 +7,10 @@ use actix_web::{get, post, web, Error, HttpResponse};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
+use tracing::{instrument, error, info};
 
 #[get("/start-level")]
+#[instrument(skip(pool))]
 async fn start_level(
     user: Authenticated,
     pool: web::Data<PgPool>,
@@ -21,9 +23,18 @@ async fn start_level(
         }))
     } else {
         let mut file =
-            File::open(format!("src/game/levels/{}/level_start.json", level.level)).unwrap();
+            match File::open(format!("src/game/levels/{}/level_start.json", level.level)) {
+                Ok(start_file) => start_file,
+                Err(e) => {
+                    error!("Couldn't open level_start.json: {}", e);
+                    File::open(format!("src/game/levels/{}/level_start.json", cur_level)).unwrap()
+                }
+            };
         let mut json_string = String::new();
-        file.read_to_string(&mut json_string).unwrap();
+        file.read_to_string(&mut json_string).unwrap_or_else(|e| {
+            error!("Couldn't read level_start.json: {}", e);
+            0
+        });
         Ok(HttpResponse::Ok()
             .content_type("application/json")
             .body(json_string))
@@ -31,12 +42,13 @@ async fn start_level(
 }
 
 #[get("/active-control-measures")]
+#[instrument(skip(pool))]
 async fn active_control_measures(
     user: Authenticated,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, Error> {
     let acm_res = get_active_control_measures(&pool.get().unwrap(), user).map_err(|e| {
-        eprintln!("{}", e);
+        error!("Couldn't get active control measures: {}", e);
         HttpResponse::InternalServerError().json(response::ActiveControlMeasuresResponse {
             active_control_measures: HashMap::new(),
         })
@@ -45,6 +57,7 @@ async fn active_control_measures(
 }
 
 #[post("/end-level")]
+#[instrument(skip(pool))]
 async fn end_level(
     user: Authenticated,
     pool: web::Data<PgPool>,
@@ -68,17 +81,23 @@ async fn end_level(
 
     let score = score_scale * (10.0 + performance_factor);
 
-    match update_user_at_level_end(&pool.get().unwrap(), user, score as i32) {
-        Ok(_) => Ok(HttpResponse::Ok().json(response::EndLevelResponse {
-            message: "Success".to_string(),
-            score,
-        })),
-        Err(_) => Ok(
-            HttpResponse::InternalServerError().json(response::EndLevelResponse {
-                message: "Failed".to_string(),
-                score: 0.0,
-            }),
-        ),
+    match update_user_at_level_end(&pool.get().unwrap(), user) {
+        Ok(_) => {
+            info!("User ended level successfully");
+            Ok(HttpResponse::Ok().json(response::EndLevelResponse {
+                message: "Success".to_string(),
+                score,
+            }))
+        },
+        Err(e) => {
+            error!("Couldn't update user: {}", e);
+            Ok(
+                HttpResponse::InternalServerError().json(response::EndLevelResponse {
+                    message: "Failed".to_string(),
+                    score: 0.0,
+                }),
+            )
+        },
     }
 }
 

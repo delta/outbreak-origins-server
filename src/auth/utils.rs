@@ -92,10 +92,7 @@ pub fn send_verify_email(email: &str, name: &str) -> Result<String, String> {
 
     match SGClient::send(&sgc, mail) {
         Ok(_) => Ok(String::from("Email sent successfully")),
-        Err(x) => {
-            println!("{}", x);
-            Err(String::from("Couldn't send email"))
-        }
+        Err(_) => Err(String::from("Couldn't send email")),
     }
 }
 
@@ -138,9 +135,6 @@ pub fn send_reset_password_mail(name: &str, email: &str) -> Result<String, Strin
 
     match SGClient::send(&sgc, mail) {
         Ok(_) => Ok(String::from("Email sent successfully")),
-        Err(x) => {
-            println!("{}", x);
-            Err(String::from("Couldn't send email"))
-        }
+        Err(_) => Err(String::from("Couldn't send email")),
     }
 }

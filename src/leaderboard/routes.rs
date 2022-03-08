@@ -3,7 +3,7 @@ use crate::db::types::PgPool;
 use crate::leaderboard::controllers::get_leaderboard;
 use crate::leaderboard::response::LeaderboardResponse;
 use actix_web::{get, web, Error, HttpResponse};
-use tracing::instrument;
+use tracing::{instrument, error};
 
 #[get("/{pg_num}")]
 #[instrument(skip(pool))]
@@ -18,7 +18,7 @@ pub async fn leaderboard(
     })
     .await
     .map_err(|e| {
-        eprintln!("{}", e);
+        error!("Couldn't get leaderboard: {}", e);
         HttpResponse::InternalServerError().finish()
     })?;
 

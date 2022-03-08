@@ -22,12 +22,12 @@ pub struct ResetPasswordEmail {
     pub email: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct UserVerify {
     pub jwt: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ResendVerification {
     pub email: String,
 }
