@@ -60025,74 +60025,44 @@
 		"1": {
 			"name": "Internal Lockdown",
 			"description": "A nationwide lockdown which will prevent the spread of virus",
-			"base_cost": 400,
-			"levels": 1,
-			"params_delta": [
-				-0.4,
-				0.25,
-				0,
-				0
-			]
+			"base_cost": 200,
+			"levels": 2,
+			"params_delta": [-0.2, -0.125, 0, 0]
 		},
 		"2": {
 			"name": "Hospital Infrastructure",
 			"description": "Hospitals and Beds",
-			"base_cost": 400,
-			"levels": 1,
-			"params_delta": [
-				0,
-				0,
-				-0.01,
-				0
-			]
+			"base_cost": 100,
+			"levels": 2,
+			"params_delta": [0, 0, -0.02, 0]
 		},
 		"3": {
 			"name": "Awareness",
 			"description": "News and awareness about the virus",
-			"base_cost": 400,
-			"levels": 1,
-			"params_delta": [
-				-0.3,
-				0.1,
-				0,
-				0
-			]
+			"base_cost": 100,
+			"levels": 2,
+			"params_delta": [-0.15, 0.05, 0, 0]
 		},
 		"4": {
 			"name": "Vaccination",
 			"description": "Vaccination for the virus",
-			"base_cost": 400,
-			"levels": 1,
-			"params_delta": [
-				0,
-				0,
-				0,
-				-0.04
-			]
+			"base_cost": 150,
+			"levels": 2,
+			"params_delta": [0, 0, 0, -0.05]
 		},
 		"5": {
 			"name": "Manpower",
 			"description": "",
-			"base_cost": 400,
-			"levels": 1,
-			"params_delta": [
-				0,
-				0,
-				-0.008,
-				0
-			]
+			"base_cost": 100,
+			"levels": 2,
+			"params_delta": [0, 0.015, -0.015, 0]
 		},
 		"6": {
 			"name": "Testing",
 			"description": "Testing of the virus",
-			"base_cost": 400,
-			"levels": 1,
-			"params_delta": [
-				0.2,
-				0,
-				0,
-				0
-			]
+			"base_cost": 50,
+			"levels": 3,
+			"params_delta": [0.05, 0, 0, 0]
 		}
 	}
 }

@@ -31,21 +31,21 @@ async fn end_level(
 ) -> Result<HttpResponse, Error> {
     let mortality = 0.8;
     let population = 15000.0;
-    let start_money = 1000.0;
+    let start_money = 500.0;
 
     let deaths = (data.removed * mortality) / population;
     let caseload = (data.infected + data.removed) / (2.0 * population);
     let money_left = data.money_left / start_money;
 
-    let deaths_weight = -4.0; // negative cuz more deaths means less score
-    let caseload_weight = -1.5; // same with caseload
-    let money_weight = 2.0; // positive cuz more money remaining means better score
+    let deaths_weight = -20.0; // negative cuz more deaths means less score
+    let caseload_weight = -5.0; // same with caseload
+    let money_weight = 0.25; // positive cuz more money remaining means better score
     let score_scale = 1000.0;
 
     let performance_factor =
         deaths * deaths_weight + caseload * caseload_weight + money_left * money_weight; // will be between [0 and sum_of_weights]
 
-    let score = score_scale * (10.0 + performance_factor);
+    let score = score_scale * (20.0 + performance_factor);
 
     match update_user_at_level_end(&pool.get().unwrap(), user) {
         Ok(_) => {

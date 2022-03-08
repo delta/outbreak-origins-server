@@ -1,9 +1,9 @@
 {
     "params" : {
         "1": {
-            "susceptible" : 0.9999995,
-            "exposed" : 4.0e-7,
-            "infectious" : 1.0e-7,
+            "susceptible" : 0.999995,
+            "exposed" : 4.0e-6,
+            "infectious" : 1.0e-6,
             "removed" : 0,
             "current_reproduction_number" : 3.0,
             "ideal_reproduction_number" : 2.0, 
@@ -12,9 +12,9 @@
             "infection_rate" : 0.1923076923
         },
         "2": {
-            "susceptible" : 0.9999995,
-            "exposed" : 4.0e-7,
-            "infectious" : 1.0e-7,
+            "susceptible" : 0.999995,
+            "exposed" : 4.0e-6,
+            "infectious" : 1.0e-6,
             "removed" : 0,
             "current_reproduction_number" : 3.0,
             "ideal_reproduction_number" : 2.0, 
@@ -23,9 +23,9 @@
             "infection_rate" : 0.1923076923 
         },
         "3": {
-            "susceptible" : 0.9999995,
-            "exposed" : 4.0e-7,
-            "infectious" : 1.0e-7,
+            "susceptible" : 0.999995,
+            "exposed" : 4.0e-6,
+            "infectious" : 1.0e-6,
             "removed" : 0,
             "current_reproduction_number" : 3.0,
             "ideal_reproduction_number" : 2.0, 
