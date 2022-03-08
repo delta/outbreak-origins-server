@@ -1,0 +1,70 @@
+{
+    "Testing": "We are Testing",
+    "Internal Lockdown": "Lockdown Took Place",
+    "Hospital Infrastructure": "Hospital",
+    "Awareness": "Awareness has started",
+    "Vaccination": "Vaccination Drive has occured",
+    "Manpower": "Manpower has been deployed",
+
+    "1": {
+        "announcement": "Event 1 has been announced",
+        "accept": "Event 1 has been accepted",
+        "reject": "Event 1 has been rejected",
+        "postpone": "Event 1 has been postponed"
+    },
+    "2": {
+        "announcement": "Event 2 has been announced",
+        "accept": "Event 2 has been accepted",
+        "reject": "Event 2 has been rejected",
+        "postpone": "Event 2 has been postponed"
+    },
+    "3": {
+        "announcement": "Event 3 has been announced",
+        "accept": "Event 3 has been accepted",
+        "reject": "Event 3 has been rejected",
+        "postpone": "Event 3 has been postponed"
+    },
+    "4": {
+        "announcement": "Event 4 has been announced",
+        "accept": "Event 4 has been accepted",
+        "reject": "Event 4 has been rejected",
+        "postpone": "Event 4 has been postponed"
+    },
+    "5": {
+        "announcement": "Event 5 has been announced",
+        "accept": "Event 5 has been accepted",
+        "reject": "Event 5 has been rejected",
+        "postpone": "Event 5 has been postponed"
+    },
+    "6": {
+        "announcement": "Event 6 has been announced",
+        "accept": "Event 6 has been accepted",
+        "reject": "Event 6 has been rejected",
+        "postpone": "Event 6 has been postponed"
+    },
+    "7": {
+        "announcement": "Event 7 has been announced",
+        "accept": "Event 7 has been accepted",
+        "reject": "Event 7 has been rejected",
+        "postpone": "Event 7 has been postponed"
+    },
+    "8": {
+        "announcement": "Event 8 has been announced",
+        "accept": "Event 8 has been accepted",
+        "reject": "Event 8 has been rejected",
+        "postpone": "Event 8 has been postponed"
+    },
+    "9": {
+        "announcement": "Event 9 has been announced",
+        "accept": "Event 9 has been accepted",
+        "reject": "Event 9 has been rejected",
+        "postpone": "Event 9 has been postponed"
+    },
+    "10": "The oranges are revolting",
+    "11": "World War 3 has started",
+    "12": "The Mayan calender was correct about the end of the world",
+    "13": "The Russians are coming",
+    "14": "No clue",
+    "15": "Dalal street investors had expected a drop in energy crisis",
+    "16": "Is the world ending?"
+}
