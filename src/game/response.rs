@@ -29,3 +29,9 @@ pub struct EndLevelResponse {
 pub struct ActiveControlMeasuresResponse {
     pub active_control_measures: HashMap<String, ActiveControlMeasures>,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct EndLevelData {
+    pub start_money: f64,
+    pub mortality: f64,
+}

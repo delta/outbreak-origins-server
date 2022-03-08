@@ -1,11 +1,36 @@
 use crate::auth::extractors::Authenticated;
 use crate::db::types::PgPool;
 use crate::game::controllers::get_active_control_measures;
-use crate::game::controllers::update_user_at_level_end;
+use crate::game::controllers::{update_user_at_level_end};
+use crate::levels::controllers::{get_current_level};
 use crate::game::response;
 use actix_web::{get, post, web, Error, HttpResponse};
 use std::collections::HashMap;
 use tracing::{error, info, instrument};
+use std::fs::File;
+use std::io::Read;
+
+#[get("/start-level")]
+async fn start_level(
+    user: Authenticated,
+    pool: web::Data<PgPool>,
+    level: web::Query<response::StartLevelRequest>,
+) -> Result<HttpResponse, Error> {
+    let cur_level = get_current_level(&pool.get().unwrap(), &user);
+    if cur_level < level.level {
+        Ok(HttpResponse::Ok().json(response::StartLevelError {
+            message: format!("Level {} is not yet unlocked", level.level),
+        }))
+    } else {
+        let mut file =
+            File::open(format!("src/game/levels/{}/level_start.json", level.level)).unwrap();
+        let mut json_string = String::new();
+        file.read_to_string(&mut json_string).unwrap();
+        Ok(HttpResponse::Ok()
+            .content_type("application/json")
+            .body(json_string))
+    }
+}
 
 #[get("/active-control-measures")]
 #[instrument(skip(pool))]
@@ -29,10 +54,12 @@ async fn end_level(
     pool: web::Data<PgPool>,
     data: web::Json<response::EndLevelRequest>,
 ) -> Result<HttpResponse, Error> {
-    let mortality = 0.8;
+    let cur_level = get_current_level(&pool.get().unwrap(), &user);
+    let file = File::open(format!("src/game/levels/{}/endLevel.json", cur_level)).unwrap();
+    let end_level_data: response::EndLevelData = serde_json::from_reader(file).unwrap();
+    let mortality = end_level_data.mortality;
     let population = 15000.0;
-    let start_money = 500.0;
-
+    let start_money = end_level_data.start_money;
     let deaths = (data.removed * mortality) / population;
     let caseload = (data.infected + data.removed) / (2.0 * population);
     let money_left = data.money_left / start_money;
