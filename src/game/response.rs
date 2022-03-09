@@ -2,6 +2,27 @@ use crate::db::models::status::ActiveControlMeasures;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[derive(Deserialize)]
+pub struct LevelRequest {
+    pub level: i32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LevelError {
+    message: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LevelResponse {
+    pub cur_level: i32,
+    pub retries_left: i32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DbResponse {
+    pub message: String,
+}
+
 #[derive(Deserialize, Debug)]
 pub struct StartLevelRequest {
     pub level: i32,
