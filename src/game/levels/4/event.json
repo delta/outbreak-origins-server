@@ -1,74 +1,74 @@
 {
-    "7": {
+    "1": {
         "name": "Olympics",
-        "description": "Olympics Description",
+        "description": "The International Olympic Committee wants to host the Olympics in your country! It is considered an honor to host the Olympics, but beware - it will attract large crowds.",
         "params_delta": [0.2, 0.3, 0, 0],
         "region": 1,
         "id": 1,
         "reward": 350
     },
-    "8": {
+    "2": {
         "name": "Tennis",
-        "description": "Tennis Event Description",
+        "description": "The college teams are planning to host a Local Tennis Tournament to see who is the strongest team. The entire student community is excited about this tournament, but parents are worried about the new virus. Will you host this tournament?",
         "params_delta": [0.1, 0.3, 0, 0],
         "region": 2,
         "id": 2,
         "reward": 200
     },
-    "9": {
+    "3": {
         "name": "Cricket",
-        "description": "Cricket World Cup Description",
+        "description": "It is the time of the year when the Annual Cricket World Cup usually happens. Cricket runs in the veins of your citizens, and The Cricket Guild is willing to organize it this year too. But is it wise to allow them?",
         "params_delta": [0.2, 0.2, 0, 0],
         "region": 3,
         "id": 3,
         "reward": 350
     },
-    "1": {
-        "name": "Football",
-        "description": "Footall World Cup Description",
-        "params_delta": [0.2, 0.2, 0, 0],
+    "4": {
+        "name": "Electronics Expo",
+        "description": "The big technology companies in your country want to showcase their latest innovations to the public and to their competitors in an Electronics Expo. It will provide the ultimate platform for technology leaders to connect, collaborate, and propel consumer technology forward. Do you want to host this event?",
+        "params_delta": [0.1, 0.025, 0, 0],
         "region": 1,
         "id": 4,
-        "reward": 350
+        "reward": 200
     },
-    "2": {
-        "name": "Election",
-        "description": "Local Body Election Description",
-        "params_delta": [0.1, 0.025, 0, 0],
+    "5": {
+        "name": "Music Concert",
+        "description": "King Purple, a popular music band is all set to rock the stage and lift the spirits of people reeling under the effects of pandemic. Will you give them a chance to showcase their talent?",
+        "params_delta": [0.1, 0.2, 0, 0],
         "region": 2,
         "id": 5,
         "reward": 200
     },
-    "3": {
-        "name": "Music Concert",
-        "description": "Music Concert Description",
-        "params_delta": [0.1, 0.2, 0, 0],
+    "6": {
+        "name": "Movie Release",
+        "description": "The trailer for Enemies of Ice has crossed millions of views on social media platforms. The producers of the movie are skeptical about OTT platforms and want to stick to a movie theater release which might give them better revenues, but medical experts say it is unwise to let people gather in theaters.",
+        "params_delta":  [0.1, 0.3, 0, 0],
         "region": 3,
         "id": 6,
         "reward": 200
     },
-    "4": {
-        "name": "Movie Release",
-        "description": "Movie Release Description",
-        "params_delta":  [0.1, 0.3, 0, 0],
+    "7": {
+        "name": "Anime Convention",
+        "description": "With the increasing restriction of people having to stay in homes, the number of anime viewers have skyrocketed. The Anime Promotion Society wants to hold a convention to leverage their popularity and promise to increase business ties with your country. But is it worth the risk of spreading the infection?",
+        "params_delta": [0.2, 0.3, 0, 0],
         "region": 1,
         "id": 7,
-        "reward": 200
-    },
-    "5": {
-        "name": "Anime Convention",
-        "description": "Anime Convention Description",
-        "params_delta": [0.2, 0.3, 0, 0],
-        "region": 2,
-        "id": 8,
         "reward": 400
     },
-    "6": {
+    "8": {
         "name": "Hanami",
-        "description": "hanami Description",
+        "description": "As spring approaches, people are excited for the Hanami festival where they can sit under the sakura trees, sipping some tea and enjoying some peaceful time with their friends and family.",
         "params_delta": [0.1, 0.2, 0, 0],
+        "region": 2,
+        "id": 8,
+        "reward": 200
+    },
+    "9": {
+        "name": "Football",
+        "description": "Footall World Cup Description",
+        "params_delta": [0.2, 0.2, 0, 0],
         "region": 3,
         "id": 9,
-        "reward": 200
-    }
+        "reward": 350
+    },
 }
