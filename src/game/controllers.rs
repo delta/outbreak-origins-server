@@ -9,6 +9,32 @@ use crate::game::response::ActiveControlMeasuresResponse;
 use diesel::prelude::*;
 use diesel::PgConnection;
 
+pub fn get_current_level(conn: &PgConnection, user: &Authenticated) -> i32 {
+    use crate::db::schema::users::dsl::*;
+    let user_email = (*user).0.as_ref().map(|y| y.email.clone());
+
+    let user_result: i32 = users
+        .filter(email.eq(user_email.unwrap()))
+        .load::<models::User>(conn)
+        .unwrap()[0]
+        .curlevel;
+
+    user_result
+}
+
+pub fn get_retry_attempts(conn: &PgConnection, user: &Authenticated) -> i32 {
+    use crate::db::schema::users::dsl::*;
+    let user_email = (*user).0.as_ref().map(|y| y.email.clone());
+
+    let user_result: i32 = users
+        .filter(email.eq(user_email.unwrap()))
+        .load::<models::User>(conn)
+        .unwrap()[0]
+        .retryattemptsleft;
+
+    user_result
+}
+
 pub fn get_active_control_measures(
     conn: &PgConnection,
     user: Authenticated,
@@ -43,13 +69,17 @@ pub fn update_user_at_level_end(
     conn: &PgConnection,
     user: Authenticated,
     user_score: i32,
-    user_money: f64
+    user_money: f64,
 ) -> Result<String, DbError> {
     use crate::db::schema::users::dsl::*;
     let user_email = user.0.as_ref().map(|y| y.email.clone());
 
     match diesel::update(users.filter(email.eq(user_email.unwrap())))
-        .set((curlevel.eq(curlevel + 1), money.eq(user_money as i32), score.eq(score + user_score)))
+        .set((
+            retryattemptsleft.eq(retryattemptsleft - 1),
+            money.eq(user_money as i32),
+            score.eq(score + user_score),
+        ))
         .execute(conn)
     {
         Ok(_) => Ok("Updated User".to_string()),

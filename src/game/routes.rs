@@ -1,15 +1,29 @@
 use crate::auth::extractors::Authenticated;
 use crate::db::types::PgPool;
-use crate::game::controllers::get_active_control_measures;
-use crate::game::controllers::{update_user_at_level_end};
-use crate::levels::controllers::{get_current_level};
+use crate::game::controllers::{
+    get_active_control_measures, get_current_level, get_retry_attempts, update_user_at_level_end,
+};
 use crate::game::response;
 use actix_web::{get, post, web, Error, HttpResponse};
 use std::collections::HashMap;
-use tracing::{error, info, instrument};
 use std::fs::File;
-use std::io::Read;
+use tracing::{error, info, instrument};
 
+#[get("/dashboard")]
+async fn level_details(
+    user: Authenticated,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, Error> {
+    let mut curr_level = get_current_level(&pool.get().unwrap(), &user);
+    let retryattemptsleft = get_retry_attempts(&pool.get().unwrap(), &user);
+    if retryattemptsleft < 1 {
+        curr_level = -1;
+    }
+    Ok(HttpResponse::Ok().json(response::LevelResponse {
+        cur_level: curr_level,
+        retries_left: retryattemptsleft,
+    }))
+}
 
 #[get("/active-control-measures")]
 #[instrument(skip(pool))]
@@ -53,7 +67,7 @@ async fn end_level(
 
     let score = score_scale * (20.0 + performance_factor);
 
-    match update_user_at_level_end(&pool.get().unwrap(), user ,score as i32, start_money) {
+    match update_user_at_level_end(&pool.get().unwrap(), user, score as i32, start_money) {
         Ok(_) => {
             info!("User ended level successfully");
             Ok(HttpResponse::Ok().json(response::EndLevelResponse {
@@ -77,6 +91,7 @@ pub fn game_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/user/api/")
             .service(active_control_measures)
-            .service(end_level),
+            .service(end_level)
+            .service(level_details),
     );
 }
