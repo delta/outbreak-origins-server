@@ -24,6 +24,7 @@ pub struct User {
     pub retryattemptsleft: i32,
     pub curr_level_score: i32,
     pub is_randomized: bool,
+    pub is_level_active: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]

@@ -40,6 +40,7 @@ table! {
         retryattemptsleft -> Int4,
         curr_level_score -> Int4,
         is_randomized -> Bool,
+        is_level_active -> Bool,
     }
 }
 
