@@ -92,7 +92,9 @@ pub fn update_user_at_level_end(
         .set((
             retryattemptsleft.eq(retryattemptsleft - 1),
             money.eq(user_money as i32),
-            score.eq(score + user_score),
+            score.eq(score - curr_score + user_score),
+            curr_level_score.eq(user_score),
+            status.eq::<Option<i32>>(None),
         ))
         .execute(conn)
     {
