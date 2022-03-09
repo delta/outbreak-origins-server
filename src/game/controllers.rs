@@ -22,7 +22,7 @@ pub fn get_current_level(
     Ok((
         user_result.curlevel,
         user_result.is_randomized,
-        user_result.is_active,
+        user_result.is_level_active,
         user_result.retryattemptsleft,
     ))
 }
@@ -111,6 +111,7 @@ pub fn update_user_at_level_end(
             score.eq(score - curr_score + user_score),
             curr_level_score.eq(user_score),
             status.eq::<Option<i32>>(None),
+            is_level_active.eq(false),
         ))
         .execute(conn)
     {
