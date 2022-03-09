@@ -318,7 +318,7 @@ impl ControlMeasure {
                     serde_json::from_str::<HashMap<String, ControlMeasureParams>>(&contents)
                         .unwrap();
 
-                let is_success = if user.is_randomized {
+                let control_measure_failed = if user.is_randomized {
                     let mut rng = thread_rng();
                     let n: f32 = rng.gen_range(0.0..=1.0);
                     if let Some(val) = control_measure_data.get(&control_measure_request.name) {
@@ -327,7 +327,7 @@ impl ControlMeasure {
                         return Ok(WSResponse::Error("Invalid event".to_string()));
                     }
                 } else {
-                    true
+                    false
                 };
 
                 let active_control_measure = (regions::table)
@@ -359,7 +359,7 @@ impl ControlMeasure {
                 let (mut active_control_measures, existing_delta) = if active_control_measure
                     .is_empty()
                 {
-                    let active_control_measures = if is_success {
+                    let active_control_measures = if !control_measure_failed {
                         let regions_row = diesel::insert_into(regions::table)
                             .values(regions::region_id.eq(control_measure_request.region as i32))
                             .get_result::<(
@@ -428,7 +428,7 @@ impl ControlMeasure {
 
                             let target_delta: Vec<f64> = match control_measure_request.action {
                                 ControlMeasureAction::Apply => {
-                                    if is_success {
+                                    if !control_measure_failed {
                                         if let Some(x) = active_control_measures
                                             .get_mut(&control_measure_request.name)
                                         {
@@ -439,20 +439,22 @@ impl ControlMeasure {
                                                 control_measure_request.level,
                                             );
                                         }
+                                        control_measure_level_info.params_delta.clone()
+                                    } else {
+                                        let target = control_measure_level_info
+                                            .params_delta
+                                            .iter()
+                                            .enumerate()
+                                            .map(|(ind, x)| match ind {
+                                                0 => -x,
+                                                1 => -x.abs(),
+                                                2 => -x.abs(),
+                                                3 => x.abs(),
+                                                _ => unreachable!(),
+                                            })
+                                            .collect::<Vec<f64>>();
+                                        target
                                     }
-                                    let target = control_measure_level_info
-                                        .params_delta
-                                        .iter()
-                                        .enumerate()
-                                        .map(|(ind, x)| match ind {
-                                            0 => -x,
-                                            1 => -x.abs(),
-                                            2 => -x.abs(),
-                                            3 => x.abs(),
-                                            _ => unreachable!(),
-                                        })
-                                        .collect::<Vec<f64>>();
-                                    target
                                 }
                                 ControlMeasureAction::Remove => {
                                     active_control_measures.remove(&control_measure_request.name);
@@ -490,7 +492,7 @@ impl ControlMeasure {
                             );
 
                             conn.transaction::<_, diesel::result::Error, _>(|| {
-                                if is_success {
+                                if !control_measure_failed {
                                     diesel::update(regions::table)
                                         .filter(
                                             regions::id.eq_any(
@@ -548,7 +550,7 @@ impl ControlMeasure {
                                     infection_rate: changed_params[3],
                                 },
                                 description: control_measure_message,
-                                is_success,
+                                is_success: !control_measure_failed,
                             }))
                         }
                         None => Ok(WSResponse::Error("Level not found".to_string())),

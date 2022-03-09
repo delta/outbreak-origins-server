@@ -14,7 +14,8 @@
         "params_delta": [-0.6, -0.375, 0, 0],
         "cost": 200
       }
-    }
+    },
+    "mess_up_chance": 0.2
   },
   "Awareness": {
     "description": "Make the general public aware about the spread of the virus and the Standard Operating Procedures.",
@@ -31,7 +32,8 @@
         "params_delta": [-0.45, 0.15, 0, 0],
         "cost": 100
       }
-    }
+    },
+    "mess_up_chance": 0.2
   },
   "Hospital Infrastructure": {
     "description": "Invest in getting more temporary hospitals built, and expanding the capacity of existing health centers.",
@@ -48,7 +50,8 @@
         "params_delta": [0, 0, -0.06, 0],
         "cost": 100
       }
-    }
+    },
+    "mess_up_chance": 0.2
   },
   "Vaccination": {
     "description": "Invest in research for a vaccine, and on getting more and more people vaccinated.",
@@ -65,7 +68,8 @@
         "params_delta": [0, 0, 0, -0.15],
         "cost": 100
       }
-    }
+    },
+    "mess_up_chance": 0.2
   },
   "Manpower": {
     "description": "Train more people to help in managing hospitals, engage volunteers to give tele-counseling.",
@@ -82,7 +86,8 @@
         "params_delta": [0, 0.045, -0.045, 0],
         "cost": 100
       }
-    }
+    },
+    "mess_up_chance": 0.2
   },
   "Travel Restriction": {
     "description": "Impose restrictions on traveling between different parts of the country to curb internal spread of infections.",
@@ -99,7 +104,8 @@
         "params_delta": [-0.2, -0.15, 0, 0],
         "cost": 100
       }
-    }
+    },
+    "mess_up_chance": 0.2
   },
   "Testing": {
     "description": "Invest in making more test kits accessible to people and screening a larger number of people.",
@@ -116,6 +122,7 @@
         "params_delta": [0.15, 0, 0, 0],
         "cost": 50
       }
-    }
+    },
+    "mess_up_chance": 0.2
   }
 }
