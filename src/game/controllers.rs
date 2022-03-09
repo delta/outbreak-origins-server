@@ -68,11 +68,25 @@ pub fn get_active_control_measures(
 pub fn update_user_at_level_end(
     conn: &PgConnection,
     user: Authenticated,
-    user_score: i32,
+    attempt_score: i32,
     user_money: f64,
 ) -> Result<String, DbError> {
     use crate::db::schema::users::dsl::*;
     let user_email = user.0.as_ref().map(|y| y.email.clone());
+
+    let curr_score: i32 = users
+        .filter(email.eq(user_email.as_ref().unwrap()))
+        .load::<models::User>(conn)
+        .unwrap()[0]
+        .curr_level_score;
+
+    let tries_left: i32 = users
+        .filter(email.eq(user_email.as_ref().unwrap()))
+        .load::<models::User>(conn)
+        .unwrap()[0]
+        .retryattemptsleft;
+
+    let user_score = (curr_score * (3 - tries_left) + attempt_score) / (4 - tries_left);
 
     match diesel::update(users.filter(email.eq(user_email.unwrap())))
         .set((

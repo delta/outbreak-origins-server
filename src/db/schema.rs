@@ -38,6 +38,7 @@ table! {
         is_email_verified -> Bool,
         is_active -> Bool,
         retryattemptsleft -> Int4,
+        curr_level_score -> Int4,
     }
 }
 
