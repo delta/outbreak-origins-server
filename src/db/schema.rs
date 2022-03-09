@@ -37,10 +37,10 @@ table! {
         money -> Int4,
         is_email_verified -> Bool,
         is_active -> Bool,
-        retryattemptsleft -> Int4,
-        curr_level_score -> Int4,
         is_randomized -> Bool,
+        retryattemptsleft -> Int4,
         is_level_active -> Bool,
+        curr_level_score -> Int4,
     }
 }
 
