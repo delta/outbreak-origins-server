@@ -21,10 +21,10 @@ pub struct User {
     pub money: i32,
     pub is_email_verified: bool,
     pub is_active: bool,
-    pub retryattemptsleft: i32,
-    pub curr_level_score: i32,
     pub is_randomized: bool,
+    pub retryattemptsleft: i32,
     pub is_level_active: bool,
+    pub curr_level_score: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Insertable)]
