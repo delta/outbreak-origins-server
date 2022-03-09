@@ -60039,42 +60039,42 @@
 	"control_measure_data": {
 		"1": {
 			"name": "Internal Lockdown",
-			"description": "A nationwide lockdown which will prevent the spread of virus",
+			"description": "All regional shopping complexes and other various crowd gathering hotspots are temporarily shut down to reduce the spread of the virus.",
 			"base_cost": 200,
 			"levels": 2,
 			"params_delta": [-0.2, -0.125, 0, 0]
 		},
 		"2": {
 			"name": "Hospital Infrastructure",
-			"description": "Hospitals and Beds",
+			"description": "Invest in getting more temporary hospitals built, and expanding the capacity of existing health centers.",
 			"base_cost": 100,
 			"levels": 2,
 			"params_delta": [0, 0, -0.02, 0]
 		},
 		"3": {
 			"name": "Awareness",
-			"description": "News and awareness about the virus",
+			"description": "Make the general public aware about the spread of the virus and the Standard Operating Procedures.",
 			"base_cost": 100,
 			"levels": 2,
 			"params_delta": [-0.15, 0.05, 0, 0]
 		},
 		"4": {
 			"name": "Vaccination",
-			"description": "Vaccination for the virus",
+			"description": "Invest in research for a vaccine, and on getting more and more people vaccinated.",
 			"base_cost": 150,
 			"levels": 2,
 			"params_delta": [0, 0, 0, -0.05]
 		},
 		"5": {
 			"name": "Manpower",
-			"description": "",
+			"description": "Train more people to help in managing hospitals, engage volunteers to give tele-counseling.",
 			"base_cost": 100,
 			"levels": 2,
 			"params_delta": [0, 0.015, -0.015, 0]
 		},
 		"6": {
 			"name": "Testing",
-			"description": "Testing of the virus",
+			"description": "Invest in making more test kits accessible to people and screening a larger number of people.",
 			"base_cost": 50,
 			"levels": 3,
 			"params_delta": [0.05, 0, 0, 0]
