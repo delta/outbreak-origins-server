@@ -63,7 +63,8 @@ impl NewsRequest {
         let event_message_data = &get_description(event_id.to_string(), user.curlevel);
         let event_message = match event_message_data {
             Read::EventNews(event_message_data) => event_message_data.announcement.to_string(),
-            Read::ControlNews(event_message_data) => event_message_data.to_string(),
+            Read::ControlNews(event_message_data) => event_message_data.apply.to_string(),
+            Read::Bs(event_message_data) => event_message_data.to_string(),
         };
         Ok(WSResponse::Ok(event_message))
     }
@@ -297,8 +298,8 @@ impl ControlMeasure {
                 // Reads data from control measure file
                 let control_measure_name =
                     &get_description(control_measure_request.name.clone(), user.curlevel);
-                let control_measure_message = match control_measure_name {
-                    Read::ControlNews(x) => x.to_string(),
+                let mut control_measure_message = match control_measure_name {
+                    Read::ControlNews(x) => x.apply.to_string(),
                     _ => "Invalid control measure".to_string(),
                 };
                 let file = format!("src/game/levels/{}/control.json", user.curlevel);
@@ -466,6 +467,11 @@ impl ControlMeasure {
                                 "Control Measure was not applied".to_string(),
                             ));
                         }
+
+                        control_measure_message = match control_measure_name {
+                            Read::ControlNews(x) => x.remove.to_string(),
+                            _ => "Invalid control measure".to_string(),
+                        };
                         active_control_measures.remove(&control_measure_request.name);
                         (zero_delta.to_vec(), 0)
                     }
@@ -755,6 +761,7 @@ impl Event {
                         let event_decline_message = match event_decline_message {
                             Read::ControlNews(_) => "Invalid Event".to_string(),
                             Read::EventNews(x) => x.reject.to_string(),
+                            Read::Bs(_) => "Invalid Event".to_string(),
                         };
                         diesel::update(status)
                             .filter(id.eq(user_status_id))
@@ -769,6 +776,7 @@ impl Event {
                         let event_postpone_message = match event_postpone_message {
                             Read::ControlNews(_) => "Invalid Event".to_string(),
                             Read::EventNews(x) => x.postpone.to_string(),
+                            Read::Bs(_) => "Invalid Event".to_string(),
                         };
                         diesel::update(status)
                             .filter(id.eq(user_status_id))

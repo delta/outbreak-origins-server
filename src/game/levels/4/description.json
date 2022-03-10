@@ -1,52 +1,70 @@
 {
-    "Testing": "We are Testing",
-    "Internal Lockdown": "Lockdown Took Place",
-    "Hospital Infrastructure": "Hospital",
-    "Awareness": "Awareness has started",
-    "Vaccination": "Vaccination Drive has occured",
-    "Manpower": "Manpower has been deployed",
+    "Testing": {
+        "apply": "Testing has been ramped up in areas 🧪",
+        "remove": "Testing has slowed down..."
+    },
+    "Internal Lockdown": {
+        "apply": "A complete lockdown has been imposed in certain regions 😷",
+        "remove": "The lockdown has been lifted 🥳"
+    },
+    "Hospital Infrastructure": {
+        "apply": "Hospital Infrastructure has improved 🏥",
+        "remove": ""
+    },
+    "Awareness": {
+        "apply": "Government media campaigns sensitize the public about the new pandemic 🎗️",
+        "remove": ""
+    },
+    "Vaccination": {
+        "apply": "Vaccine production has improved, more people to get jabs soon 💉",
+        "remove": ""
+    },
+    "Manpower": {
+        "apply": "Government recruits volunteers to help in dealing with the outbreak 👨‍⚕️👩‍⚕️",
+        "remove": ""
+    },
 
     "1": {
         "announcement": "Event 1 has been announced",
-        "accept": "Event 1 has been accepted",
-        "reject": "Event 1 has been rejected",
-        "postpone": "Event 1 has been postponed"
+        "accept": "The Government has accepted an offer to host the Olympics 🏋️",
+        "reject": "Olympics will be hosted elsewhere this time.",
+        "postpone": "Government skeptical about hosting Olympics."
     },
     "2": {
         "announcement": "Event 2 has been announced",
-        "accept": "Event 2 has been accepted",
-        "reject": "Event 2 has been rejected",
-        "postpone": "Event 2 has been postponed"
+        "accept": "College Teams excited to play in the Tennis Tournament! 🎾",
+        "reject": "Government stops Tennis Tournament - players dejected.",
+        "postpone": "Tennis players may need to wait to play the Tournament"
     },
     "3": {
         "announcement": "Event 3 has been announced",
-        "accept": "Event 3 has been accepted",
-        "reject": "Event 3 has been rejected",
-        "postpone": "Event 3 has been postponed"
+        "accept": "Cricket fans in high spirits as the World Cup will happen this year! 🏏",
+        "reject": "Cricket World Cup cancelled: fans are trying to bat off the sadness with memes 😟",
+        "postpone": "Will the Cricket World Cup happen this year?"
     },
     "4": {
         "announcement": "Event 4 has been announced",
-        "accept": "Event 4 has been accepted",
-        "reject": "Event 4 has been rejected",
-        "postpone": "Event 4 has been postponed"
+        "accept": "AI, Blockchain, Self Driving Cars, and more technologies to be showcased at the Electronics Expo 🤖",
+        "reject": "Tech enthusiasts dissapointed over the cancellation of the Electronics Expo",
+        "postpone": "Electronics Expo has been delayed due to the pandemic"
     },
     "5": {
         "announcement": "Event 5 has been announced",
-        "accept": "Event 5 has been accepted",
-        "reject": "Event 5 has been rejected",
-        "postpone": "Event 5 has been postponed"
+        "accept": "King Purple all set to rock the stage 🎸",
+        "reject": "'The pandemic has destroyed people's spirits, we will hold virtual concerts': King Purple",
+        "postpone": "King Purple fans wait anxiously for the announcement of their concert"
     },
     "6": {
         "announcement": "Event 6 has been announced",
-        "accept": "Event 6 has been accepted",
-        "reject": "Event 6 has been rejected",
-        "postpone": "Event 6 has been postponed"
+        "accept": "'Enemies of Ice' Movie to be released across theaters 🍿",
+        "reject": "Popular OTT platforms bid for 'Enemies of Ice'",
+        "postpone": "Fans left waiting for the release of the new movie."
     },
     "7": {
         "announcement": "Event 7 has been announced",
-        "accept": "Event 7 has been accepted",
-        "reject": "Event 7 has been rejected",
-        "postpone": "Event 7 has been postponed"
+        "accept": "Shinzo wo Sasageyo! The Anime Convention is expected to draw large crowds",
+        "reject": "'We urge everyone to enjoy anime at home until the pandemic ends, Anime Con will happen next year': Anime Promotion Society",
+        "postpone": "Anime fans restless over looming uncertainty"
     },
     "8": {
         "announcement": "Event 8 has been announced",
@@ -68,3 +86,4 @@
     "15": "Dalal street investors had expected a drop in energy crisis",
     "16": "Is the world ending?"
 }
+

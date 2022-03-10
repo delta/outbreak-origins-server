@@ -18,6 +18,12 @@ pub struct EventNews {
     pub postpone: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ControlNews {
+    pub apply: String,
+    pub remove: String,
+}
+
 #[derive(Serialize)]
 pub struct NewsRequest {
     pub message: String,
@@ -26,8 +32,9 @@ pub struct NewsRequest {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum Read {
-    ControlNews(String),
+    ControlNews(ControlNews),
     EventNews(EventNews),
+    Bs(String),
 }
 
 #[derive(Serialize)]
