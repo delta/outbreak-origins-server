@@ -414,9 +414,10 @@ impl ControlMeasure {
                                 .get(&control_measure_request.level)
                             {
                                 Some(control_measure_level_info) => {
-                                    if existing_delta == zero_delta {
+                                    if control_measure_level_info.cost > user.money as u32 {
+                                        info!("Not enough money");
                                         return Ok(WSResponse::Error(
-                                            "Control Measure was not applied".to_string(),
+                                            "Not enough money".to_string(),
                                         ));
                                     }
                                     let target = if !control_measure_failed {
@@ -460,6 +461,11 @@ impl ControlMeasure {
                         }
                     }
                     ControlMeasureAction::Remove => {
+                        if existing_delta == zero_delta {
+                            return Ok(WSResponse::Error(
+                                "Control Measure was not applied".to_string(),
+                            ));
+                        }
                         active_control_measures.remove(&control_measure_request.name);
                         (zero_delta.to_vec(), 0)
                     }
