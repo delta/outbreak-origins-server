@@ -24,11 +24,6 @@ pub struct ControlNews {
     pub remove: String,
 }
 
-#[derive(Serialize)]
-pub struct NewsRequest {
-    pub message: String,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum Read {
@@ -65,6 +60,7 @@ enum_str!(
     enum WSResponse {
         // News(NewsEvent),
         Seed(String),
+        Info(String),
         Start(SimulatorResponse),
         Control(ActionResponse),
         Event(ActionResponse),
