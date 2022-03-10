@@ -1,6 +1,6 @@
 use crate::actor::events::types::{
     ActionResponse, ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventAction,
-    EventParams, Level, NewsRequest, Read, Save, Seed, SimulatorParams, SimulatorResponse, Start,
+    EventParams, Read, Save, Seed, SimulatorParams, SimulatorResponse, Start,
     StartParams, WSResponse,
 };
 use crate::db::models;
@@ -21,7 +21,6 @@ use tracing::{error, info, instrument};
 const POPULATION: f64 = 5000.0;
 const TOTAL_DAYS: f64 = 700.0;
 const EVENT_POSTPONE_PENALTY: i32 = 100;
-const NO_OF_EVENTS: i32 = 9;
 
 pub fn get_description(key: String, level: i32) -> Read {
     let file = format!("src/game/levels/{}/description.json", level);
@@ -29,45 +28,6 @@ pub fn get_description(key: String, level: i32) -> Read {
     let contents = fs::read_to_string(&path).expect("Something went wrong reading the file");
     let obj = serde_json::from_str::<HashMap<String, Read>>(&contents).unwrap();
     obj.get(&key).expect("Invalid key").clone()
-}
-
-impl NewsRequest {
-    #[instrument(skip(conn))]
-    pub fn handle(
-        payload: String,
-        user: &extractors::Authenticated,
-        conn: &PgConnection,
-    ) -> Result<WSResponse, DbError> {
-        use crate::db::schema::status::dsl::*;
-        use crate::db::schema::users::dsl::{email, users};
-        let user = user.0.as_ref().unwrap();
-        let user = users
-            .filter(email.eq(user.email.clone()))
-            .first::<models::User>(conn)
-            .optional()?;
-
-        let user = match user {
-            None => return Ok(WSResponse::Error("User not found".to_string())),
-            Some(y) => y,
-        };
-        let mut event_id = serde_json::from_str::<Level>(&payload).unwrap().id;
-        let user_status_id = user.status.unwrap();
-        if event_id == 0 {
-            let user_status = status
-                .filter(id.eq(user_status_id))
-                .first::<(i32, i32, i32, i32)>(conn)?;
-            event_id = user_status.1 + 1;
-        } else {
-            event_id += NO_OF_EVENTS;
-        }
-        let event_message_data = &get_description(event_id.to_string(), user.curlevel);
-        let event_message = match event_message_data {
-            Read::EventNews(event_message_data) => event_message_data.announcement.to_string(),
-            Read::ControlNews(event_message_data) => event_message_data.apply.to_string(),
-            Read::Bs(event_message_data) => event_message_data.to_string(),
-        };
-        Ok(WSResponse::Ok(event_message))
-    }
 }
 
 impl Seed {
@@ -845,7 +805,7 @@ impl Save {
                         ),
                     )
                     .execute(conn)?;
-                Ok(WSResponse::Ok("Saved".to_string()))
+                Ok(WSResponse::Info("Saving".to_string()))
             }
         }
     }
