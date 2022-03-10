@@ -9,6 +9,8 @@ services:
         ports:
             - "${PORT}:8081"
         restart: on-failure
+        volumes:
+          - ./logs:/app/logs
 
     adminer:
       image: adminer
