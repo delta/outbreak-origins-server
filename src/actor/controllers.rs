@@ -406,29 +406,20 @@ impl ControlMeasure {
                     }
                 };
 
-                match control_measure_data.get(&control_measure_request.name) {
-                    Some(control_measure_params) => match control_measure_params
-                        .levels
-                        .get(&control_measure_request.level)
-                    {
-                        Some(control_measure_level_info) => {
-                            if control_measure_request.action == ControlMeasureAction::Apply
-                                && control_measure_level_info.cost > user.money as u32
+                let (target_delta, cost) = match control_measure_request.action {
+                    ControlMeasureAction::Apply => {
+                        match control_measure_data.get(&control_measure_request.name) {
+                            Some(control_measure_params) => match control_measure_params
+                                .levels
+                                .get(&control_measure_request.level)
                             {
-                                info!("Not enough money");
-                                return Ok(WSResponse::Error("Not enough money".to_string()));
-                            }
-                            if control_measure_request.action == ControlMeasureAction::Remove
-                                && existing_delta == zero_delta
-                            {
-                                return Ok(WSResponse::Error(
-                                    "Control measure was not applied".to_string(),
-                                ));
-                            }
-
-                            let target_delta: Vec<f64> = match control_measure_request.action {
-                                ControlMeasureAction::Apply => {
-                                    if !control_measure_failed {
+                                Some(control_measure_level_info) => {
+                                    if existing_delta == zero_delta {
+                                        return Ok(WSResponse::Error(
+                                            "Control Measure was not applied".to_string(),
+                                        ));
+                                    }
+                                    let target = if !control_measure_failed {
                                         if let Some(x) = active_control_measures
                                             .get_mut(&control_measure_request.name)
                                         {
@@ -454,109 +445,106 @@ impl ControlMeasure {
                                             })
                                             .collect::<Vec<f64>>();
                                         target
-                                    }
+                                    };
+                                    (target, control_measure_level_info.cost)
                                 }
-                                ControlMeasureAction::Remove => {
-                                    active_control_measures.remove(&control_measure_request.name);
-                                    zero_delta.to_vec()
+                                None => {
+                                    return Ok(WSResponse::Error("Level not found".to_string()));
                                 }
-                            };
+                            },
+                            None => {
+                                return Ok(WSResponse::Error(
+                                    "Control Measure not found".to_string(),
+                                ));
+                            }
+                        }
+                    }
+                    ControlMeasureAction::Remove => {
+                        active_control_measures.remove(&control_measure_request.name);
+                        (zero_delta.to_vec(), 0)
+                    }
+                };
 
-                            let net_delta: Vec<f64> = existing_delta
-                                .iter()
-                                .zip(target_delta.iter())
-                                .map(|(a, b)| b - a)
-                                .collect();
+                let net_delta: Vec<f64> = existing_delta
+                    .iter()
+                    .zip(target_delta.iter())
+                    .map(|(a, b)| b - a)
+                    .collect();
 
-                            let recvd_params = [
-                                control_measure_request.params.ideal_reproduction_number,
-                                control_measure_request.params.compliance_factor,
-                                control_measure_request.params.recovery_rate,
-                                control_measure_request.params.infection_rate,
-                            ];
+                let recvd_params = [
+                    control_measure_request.params.ideal_reproduction_number,
+                    control_measure_request.params.compliance_factor,
+                    control_measure_request.params.recovery_rate,
+                    control_measure_request.params.infection_rate,
+                ];
 
-                            let changed_params: Vec<f64> = net_delta
-                                .iter()
-                                .zip(recvd_params.iter())
-                                .map(|(&a, &b)| a + b)
-                                .collect();
+                let changed_params: Vec<f64> = net_delta
+                    .iter()
+                    .zip(recvd_params.iter())
+                    .map(|(&a, &b)| a + b)
+                    .collect();
 
-                            info!(
-                                "Simulating Control Measure with params: {:?}\n{:?}",
-                                &control_measure_request.params, &changed_params
-                            );
-                            let (payload, susceptible, exposed, infectious, removed) = simulate(
-                                &control_measure_request.params,
-                                &changed_params,
-                                control_measure_request.cur_date,
-                            );
+                info!(
+                    "Simulating Control Measure with params: {:?}\n{:?}",
+                    &control_measure_request.params, &changed_params
+                );
+                let (payload, susceptible, exposed, infectious, removed) = simulate(
+                    &control_measure_request.params,
+                    &changed_params,
+                    control_measure_request.cur_date,
+                );
 
-                            conn.transaction::<_, diesel::result::Error, _>(|| {
-                                if !control_measure_failed {
-                                    diesel::update(regions::table)
-                                        .filter(
-                                            regions::id.eq_any(
-                                                regions_status::table
-                                                    .filter(regions_status::status_id.eq(status_id))
-                                                    .select(regions_status::region_id)
-                                                    .load::<i32>(conn)?,
-                                            ),
-                                        )
-                                        .filter(
-                                            regions::region_id
-                                                .eq(control_measure_request.region as i32),
-                                        )
-                                        .set((
-                                            regions::active_control_measures.eq(
-                                                models::status::ActiveControlMeasures(
-                                                    active_control_measures,
-                                                ),
-                                            ),
-                                            regions::simulation_params.eq(SimulatorParams {
-                                                susceptible,
-                                                exposed,
-                                                infectious,
-                                                removed,
-                                                current_reproduction_number:
-                                                    control_measure_request
-                                                        .params
-                                                        .current_reproduction_number,
-                                                ideal_reproduction_number: changed_params[0],
-                                                compliance_factor: changed_params[1],
-                                                recovery_rate: changed_params[2],
-                                                infection_rate: changed_params[3],
-                                            }),
-                                        ))
-                                        .execute(conn)?;
-                                }
-                                diesel::update(users::table)
-                                        .filter(users::email.eq(user.email))
-                                        .set(
-                                            users::money
-                                                .eq(user.money
-                                                    - control_measure_level_info.cost as i32),
-                                        )
-                                        .execute(conn)?;
-                                Ok(())
-                            })?;
-                            Ok(WSResponse::Control(ActionResponse {
-                                simulation_data: SimulatorResponse {
-                                    date: control_measure_request.cur_date,
-                                    region: control_measure_request.region as i32,
-                                    payload,
+                conn.transaction::<_, diesel::result::Error, _>(|| {
+                    if !control_measure_failed {
+                        diesel::update(regions::table)
+                            .filter(
+                                regions::id.eq_any(
+                                    regions_status::table
+                                        .filter(regions_status::status_id.eq(status_id))
+                                        .select(regions_status::region_id)
+                                        .load::<i32>(conn)?,
+                                ),
+                            )
+                            .filter(regions::region_id.eq(control_measure_request.region as i32))
+                            .set((
+                                regions::active_control_measures.eq(
+                                    models::status::ActiveControlMeasures(active_control_measures),
+                                ),
+                                regions::simulation_params.eq(SimulatorParams {
+                                    susceptible,
+                                    exposed,
+                                    infectious,
+                                    removed,
+                                    current_reproduction_number: control_measure_request
+                                        .params
+                                        .current_reproduction_number,
                                     ideal_reproduction_number: changed_params[0],
                                     compliance_factor: changed_params[1],
                                     recovery_rate: changed_params[2],
                                     infection_rate: changed_params[3],
-                                },
-                                description: control_measure_message,
-                                is_success: !control_measure_failed,
-                            }))
-                        }
-                        None => Ok(WSResponse::Error("Level not found".to_string())),
+                                }),
+                            ))
+                            .execute(conn)?;
+                    }
+                    diesel::update(users::table)
+                        .filter(users::email.eq(user.email))
+                        .set(users::money.eq(user.money - cost as i32))
+                        .execute(conn)?;
+                    Ok(())
+                })?;
+                Ok(WSResponse::Control(ActionResponse {
+                    simulation_data: SimulatorResponse {
+                        date: control_measure_request.cur_date,
+                        region: control_measure_request.region as i32,
+                        payload,
+                        ideal_reproduction_number: changed_params[0],
+                        compliance_factor: changed_params[1],
+                        recovery_rate: changed_params[2],
+                        infection_rate: changed_params[3],
                     },
-                    None => Ok(WSResponse::Error("No control measure found".to_string())),
-                }
+                    description: control_measure_message,
+                    is_success: !control_measure_failed,
+                }))
             }
         };
         res
