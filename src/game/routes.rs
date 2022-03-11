@@ -4,6 +4,7 @@ use crate::game::controllers::{
     change_level_type, get_active_control_measures, get_current_level, update_user_at_level_end,
 };
 use crate::game::{requests, response};
+use crate::utils::decrypt_data;
 use actix_web::{get, http::StatusCode, post, web, Error, HttpResponse};
 use std::collections::HashMap;
 use std::fs::File;
@@ -80,6 +81,20 @@ async fn end_level(
     pool: web::Data<PgPool>,
     data: web::Json<requests::EndLevelRequest>,
 ) -> Result<HttpResponse, Error> {
+    let data = decrypt_data(&data.payload).map_err(|e| {
+        error!("Couldn't decrypt: {}", e);
+        HttpResponse::InternalServerError().json(response::EndLevelResponse {
+            message: "Failed".to_string(),
+            score: 0.0,
+        })
+    })?;
+    let data = serde_json::from_str::<requests::EndLevelDecrypted>(&data).map_err(|e| {
+        error!("Couldn't parse json: {}", e);
+        HttpResponse::InternalServerError().json(response::EndLevelResponse {
+            message: "Failed".to_string(),
+            score: 0.0,
+        })
+    })?;
     let email = user.0.as_ref().unwrap().email.clone();
     let conn1 = pool.get().unwrap();
     let (cur_level, _, _, _) = web::block(move || get_current_level(&conn1, email.clone()))

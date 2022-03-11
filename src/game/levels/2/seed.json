@@ -60034,7 +60034,7 @@
 			"description": "Invest in getting more temporary hospitals built, and expanding the capacity of existing health centers.",
 			"base_cost": 100,
 			"levels": 2,
-			"params_delta": [0, 0, -0.02, 0]
+			"params_delta": [0, 0, -0.01, 0]
 		},
 		"3": {
 			"name": "Awareness",
@@ -60053,16 +60053,16 @@
 		"5": {
 			"name": "Manpower",
 			"description": "Train more people to help in managing hospitals, engage volunteers to give tele-counseling.",
-			"base_cost": 100,
+			"base_cost": 200,
 			"levels": 2,
-			"params_delta": [0, 0.015, -0.015, 0]
+			"params_delta": [0, 0.015, -0.0075, 0]
 		},
 		"6": {
 			"name": "Testing",
 			"description": "Invest in making more test kits accessible to people and screening a larger number of people.",
 			"base_cost": 50,
 			"levels": 3,
-			"params_delta": [0.05, 0, 0, 0]
+			"params_delta": [0.05, 0, 0, -0.02]
 		}
 
 	}

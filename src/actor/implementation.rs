@@ -5,6 +5,7 @@ use crate::actor::events::types::{
 };
 
 use crate::db::types::DbError;
+use crate::utils::decrypt_data;
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
 use actix_web::web;
@@ -81,6 +82,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                 self.heartbeat = Instant::now();
             }
             Ok(Message::Text(text)) => {
+                let text = match decrypt_data(&text) {
+                    Ok(x) => x,
+                    Err(x) => {
+                        error!("Decrypt data: {}", x);
+                        "".to_string()
+                    }
+                };
                 let request = serde_json::from_str::<WSRequest>(&text).unwrap_or(WSRequest {
                     kind: "".to_string(),
                     region: 0,
