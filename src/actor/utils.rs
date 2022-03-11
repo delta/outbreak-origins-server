@@ -1,20 +1,9 @@
 use crate::actor::events::types::SimulatorParams;
 use virus_simulator::Simulator;
 use virus_simulator::State;
-use magic_crypt::{new_magic_crypt, MagicCryptTrait};
-use std::env;
 
 const POPULATION: f64 = 5000.0;
 const TOTAL_DAYS: f64 = 700.0;
-
-pub fn decrypt_data(payload: &str) -> Result<String, String>  {
-    let enc_key = env::var("ENC_KEY").expect("ENC_KEY must be present");
-    let mc = new_magic_crypt!(enc_key,256);
-    match mc.decrypt_base64_to_string(payload) {
-        Ok(x) => Ok(x),
-        Err(_) => Err("Couldn't decrypt data".to_string())
-    }
-}
 
 pub fn serialize_state(s: &[State], population: f64) -> String {
     // serilising the data

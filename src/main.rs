@@ -22,6 +22,7 @@ mod game;
 mod leaderboard;
 mod middleware;
 mod playerstats;
+mod utils;
 
 use crate::middleware as common_middleware;
 
