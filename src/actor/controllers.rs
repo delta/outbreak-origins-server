@@ -22,7 +22,7 @@ const POPULATION: f64 = 5000.0;
 const TOTAL_DAYS: f64 = 700.0;
 const EVENT_POSTPONE_PENALTY: i32 = 100;
 
-const PARAM_LIMITS: &'static [(f64, f64)] = &[(1.2, 3.0), (0.0, 0.8), (0.05, 0.1), (0.05, 0.30)];
+const PARAM_LIMITS: &[(f64, f64)] = &[(1.2, 3.0), (0.0, 0.8), (0.05, 0.1), (0.05, 0.30)];
 
 pub fn get_description(key: String, level: i32) -> Read {
     let file = format!("src/game/levels/{}/description.json", level);

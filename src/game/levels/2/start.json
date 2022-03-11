@@ -6,10 +6,10 @@
             "infectious" : 1.0e-6,
             "removed" : 0,
             "current_reproduction_number" : 3.0,
-            "ideal_reproduction_number" : 2.0, 
-            "compliance_factor" : 0.8, 
-            "recovery_rate" : 0.0555, 
-            "infection_rate" : 0.1923076923
+            "ideal_reproduction_number" : 2.2, 
+            "compliance_factor" : 0.7, 
+            "recovery_rate" : 0.0655, 
+            "infection_rate" : 0.2123076923
         },
         "2": {
             "susceptible" : 0.999995,
@@ -17,10 +17,10 @@
             "infectious" : 1.0e-6,
             "removed" : 0,
             "current_reproduction_number" : 3.0,
-            "ideal_reproduction_number" : 2.0, 
-            "compliance_factor" : 0.8, 
-            "recovery_rate" : 0.0555, 
-            "infection_rate" : 0.1923076923 
+            "ideal_reproduction_number" : 2.2, 
+            "compliance_factor" : 0.7, 
+            "recovery_rate" : 0.0655, 
+            "infection_rate" : 0.2123076923 
         },
         "3": {
             "susceptible" : 0.999995,
@@ -28,10 +28,10 @@
             "infectious" : 1.0e-6,
             "removed" : 0,
             "current_reproduction_number" : 3.0,
-            "ideal_reproduction_number" : 2.0, 
-            "compliance_factor" : 0.8, 
-            "recovery_rate" : 0.0555, 
-            "infection_rate" : 0.1923076923 
+            "ideal_reproduction_number" : 2.2, 
+            "compliance_factor" : 0.7, 
+            "recovery_rate" : 0.0655, 
+            "infection_rate" : 0.2123076923 
         }
     }
 }

@@ -3,8 +3,8 @@ use crate::db::types::PgPool;
 use crate::game::controllers::{
     change_level_type, get_active_control_measures, get_current_level, update_user_at_level_end,
 };
-use crate::utils::decrypt_data;
 use crate::game::{requests, response};
+use crate::utils::decrypt_data;
 use actix_web::{get, http::StatusCode, post, web, Error, HttpResponse};
 use std::collections::HashMap;
 use std::fs::File;
@@ -87,7 +87,6 @@ async fn end_level(
             message: "Failed".to_string(),
             score: 0.0,
         })
-
     })?;
     let data = serde_json::from_str::<requests::EndLevelDecrypted>(&data).map_err(|e| {
         error!("Couldn't parse json: {}", e);

@@ -5,12 +5,12 @@ use crate::actor::events::types::{
 };
 
 use crate::db::types::DbError;
+use crate::utils::decrypt_data;
 use actix::prelude::*;
 use actix::{Actor, StreamHandler};
 use actix_web::web;
 pub use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
-use crate::utils::decrypt_data;
 
 use std::time::{Duration, Instant};
 
