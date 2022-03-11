@@ -16,8 +16,13 @@ pub struct StartLevelRequest {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct EndLevelRequest {
+pub struct EndLevelDecrypted {
     pub infected: f64,
     pub removed: f64,
     pub money_left: f64,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct EndLevelRequest {
+    pub payload: String,
 }

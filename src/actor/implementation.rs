@@ -10,7 +10,7 @@ use actix::{Actor, StreamHandler};
 use actix_web::web;
 pub use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
-use crate::actor::utils::decrypt_data;
+use crate::utils::decrypt_data;
 
 use std::time::{Duration, Instant};
 
