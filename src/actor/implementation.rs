@@ -10,6 +10,7 @@ use actix::{Actor, StreamHandler};
 use actix_web::web;
 pub use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
+use crate::actor::utils::decrypt_data;
 
 use std::time::{Duration, Instant};
 
@@ -81,6 +82,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Game {
                 self.heartbeat = Instant::now();
             }
             Ok(Message::Text(text)) => {
+                let text = match decrypt_data(&text) {
+                    Ok(x) => x,
+                    Err(x) => {
+                        error!("Decrypt data: {}", x);
+                        "".to_string()
+                    }
+                };
                 let request = serde_json::from_str::<WSRequest>(&text).unwrap_or(WSRequest {
                     kind: "".to_string(),
                     region: 0,
