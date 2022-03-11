@@ -1,13 +1,13 @@
 use crate::actor::events::types::{
     ActionResponse, ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventAction,
-    EventParams, Read, Save, Seed, SimulatorParams, SimulatorResponse, Start,
-    StartParams, WSResponse,
+    EventParams, Read, Save, Seed, SimulatorParams, SimulatorResponse, Start, StartParams,
+    WSResponse,
 };
 use crate::db::models;
 use diesel::prelude::*;
 use diesel::PgConnection;
 
-use crate::actor::utils::{serialize_state, simulate};
+use crate::actor::utils::{serialize_state, simulate, zip};
 use crate::auth::extractors;
 
 use crate::db::types::DbError;
@@ -21,6 +21,8 @@ use tracing::{error, info, instrument};
 const POPULATION: f64 = 5000.0;
 const TOTAL_DAYS: f64 = 700.0;
 const EVENT_POSTPONE_PENALTY: i32 = 100;
+
+const PARAM_LIMITS: &'static [(f64, f64)] = &[(1.2, 3.0), (0.0, 0.8), (0.05, 0.1), (0.05, 0.30)];
 
 pub fn get_description(key: String, level: i32) -> Read {
     let file = format!("src/game/levels/{}/description.json", level);
@@ -450,10 +452,17 @@ impl ControlMeasure {
                     control_measure_request.params.infection_rate,
                 ];
 
-                let changed_params: Vec<f64> = net_delta
-                    .iter()
-                    .zip(recvd_params.iter())
-                    .map(|(&a, &b)| a + b)
+                let zipped = zip!(net_delta, recvd_params, PARAM_LIMITS);
+                let changed_params: Vec<f64> = zipped
+                    .map(|(&a, (&b, &c))| {
+                        if a + b < c.0 {
+                            c.0
+                        } else if a + b > c.1 {
+                            c.1
+                        } else {
+                            a + b
+                        }
+                    })
                     .collect();
 
                 info!(
@@ -640,11 +649,17 @@ impl Event {
                                     event.params.infection_rate,
                                 ];
 
-                                let changed_params: Vec<f64> = data
-                                    .params_delta
-                                    .iter()
-                                    .zip(recvd_params.iter())
-                                    .map(|(&a, &b)| a + b)
+                                let zipped = zip!(data.params_delta, recvd_params, PARAM_LIMITS);
+                                let changed_params: Vec<f64> = zipped
+                                    .map(|(&a, (&b, &c))| {
+                                        if a + b < c.0 {
+                                            c.0
+                                        } else if a + b > c.1 {
+                                            c.1
+                                        } else {
+                                            a + b
+                                        }
+                                    })
                                     .collect();
 
                                 info!(

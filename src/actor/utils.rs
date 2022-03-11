@@ -60,3 +60,14 @@ pub fn simulate(
         removed,
     )
 }
+
+#[macro_export]
+macro_rules! zip {
+    ($x: expr) => ($x);
+    ($x: expr, $($y: expr), +) => (
+        $x.iter().zip(
+            zip!($($y), +))
+    )
+}
+
+pub use zip;
