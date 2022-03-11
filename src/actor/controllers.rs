@@ -1,7 +1,7 @@
 use crate::actor::events::types::{
     ActionResponse, ControlMeasure, ControlMeasureAction, ControlMeasureParams, Event, EventAction,
-    EventParams, Read, Save, Seed, SimulatorParams, SimulatorResponse, Start,
-    StartParams, WSResponse,
+    EventParams, Read, Save, Seed, SimulatorParams, SimulatorResponse, Start, StartParams,
+    WSResponse,
 };
 use crate::db::models;
 use diesel::prelude::*;
